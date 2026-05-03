@@ -9,10 +9,14 @@ import dagger.hilt.android.scopes.ActivityScoped
 import dev.cannoli.scorza.R
 import dev.cannoli.scorza.input.InputTesterController
 import dev.cannoli.scorza.ui.viewmodel.InputTesterViewModel
+import dev.cannoli.ui.components.OsdController
 
 @Module
 @InstallIn(ActivityComponent::class)
 object InputModule {
+
+    @Provides @ActivityScoped
+    fun provideOsdController(): OsdController = OsdController()
 
     @Provides @ActivityScoped
     fun provideInputTesterController(

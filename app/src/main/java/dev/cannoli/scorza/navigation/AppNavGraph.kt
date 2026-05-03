@@ -67,7 +67,7 @@ import dev.cannoli.ui.ELLIPSIS
 import dev.cannoli.ui.components.List
 import dev.cannoli.ui.components.LocalStatusBarLeftEdge
 import dev.cannoli.ui.components.MessageOverlay
-import dev.cannoli.ui.components.OsdPill
+import dev.cannoli.ui.components.OsdHost
 import dev.cannoli.ui.components.PillRowKeyValue
 import dev.cannoli.ui.components.PillRowText
 import dev.cannoli.ui.components.StatusBar
@@ -210,7 +210,7 @@ fun AppNavGraph(
     updateAvailable: Boolean = false,
     downloadProgress: Float = 0f,
     downloadError: String? = null,
-    osdMessage: String? = null,
+    osdController: dev.cannoli.ui.components.OsdController,
     activeMapping: dev.cannoli.scorza.input.v2.DeviceMapping? = null,
     mappingRepository: dev.cannoli.scorza.input.v2.repo.MappingRepository? = null,
     editButtonsController: dev.cannoli.scorza.input.EditButtonsController? = null,
@@ -901,9 +901,7 @@ fun AppNavGraph(
     if (onPortraitMarginRow && appSettings.portraitMarginPx > 0) {
         PortraitMarginOverlay(marginPx = appSettings.portraitMarginPx)
     }
-    if (osdMessage != null) {
-        OsdPill(message = osdMessage)
-    }
+    OsdHost(controller = osdController)
     }
     }
 }

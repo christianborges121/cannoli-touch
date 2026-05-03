@@ -85,6 +85,7 @@ class MainActivity : ComponentActivity(), ActivityActions {
     @Inject lateinit var portRouter: dev.cannoli.scorza.input.v2.runtime.PortRouter
     @Inject lateinit var activeMappingHolder: dev.cannoli.scorza.input.v2.runtime.ActiveMappingHolder
     @Inject lateinit var bindingController: BindingController
+    @Inject lateinit var osdController: dev.cannoli.ui.components.OsdController
     @Inject lateinit var inputTesterController: InputTesterController
     @Inject lateinit var updateManager: UpdateManager
     @Inject lateinit var setupCoordinator: SetupCoordinator
@@ -236,7 +237,6 @@ class MainActivity : ComponentActivity(), ActivityActions {
                         val navScreen = nav.currentScreen
                         val navDialogState = nav.dialogState
                         val navResumableGames = nav.resumableGames
-                        val navOsdMessage = nav.osdMessage
                         val activeMapping by activeMappingHolder.active.collectAsState()
                         LaunchedEffect(navScreen) {
                         }
@@ -260,7 +260,7 @@ class MainActivity : ComponentActivity(), ActivityActions {
                             updateAvailable = updateInfo != null,
                             downloadProgress = dlProgress ?: 0f,
                             downloadError = dlError,
-                            osdMessage = navOsdMessage,
+                            osdController = osdController,
                             activeMapping = activeMapping,
                             mappingRepository = mappingRepository,
                             editButtonsController = editButtonsController,
@@ -380,25 +380,18 @@ class MainActivity : ComponentActivity(), ActivityActions {
         }
     }
 
-    private val osdHandler = Handler(Looper.getMainLooper())
-    private val clearOsd = Runnable { nav.osdMessage = null }
-
     private fun registerControllerOsd() {
         controllerV2Bridge.onDeviceAdded = { device ->
             val port = portRouter.portFor(device.androidDeviceId)
             if (port != null) {
                 val name = portRouter.mappingForPort(port)?.displayName?.takeIf { it.isNotEmpty() }
                     ?: device.name.ifEmpty { "Controller" }
-                osdHandler.removeCallbacks(clearOsd)
-                nav.osdMessage = "P${port + 1}: $name"
-                osdHandler.postDelayed(clearOsd, 3000)
+                osdController.show("P${port + 1}: $name")
             }
         }
         controllerV2Bridge.onDeviceRemoved = { departed ->
-            osdHandler.removeCallbacks(clearOsd)
             val portLabel = departed.port?.let { "P${it + 1}: " } ?: ""
-            nav.osdMessage = "$portLabel${departed.displayName} disconnected"
-            osdHandler.postDelayed(clearOsd, 3000)
+            osdController.show("$portLabel${departed.displayName} disconnected")
         }
     }
 

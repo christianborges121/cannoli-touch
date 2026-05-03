@@ -16,7 +16,6 @@ class NavigationController @Inject constructor() {
     val dialogState = MutableStateFlow<DialogState>(DialogState.None)
 
     var resumableGames by mutableStateOf(emptySet<String>())
-    var osdMessage by mutableStateOf<String?>(null)
     var navigating = false
     var currentFirstVisible = 0
     var currentPageSize = 10

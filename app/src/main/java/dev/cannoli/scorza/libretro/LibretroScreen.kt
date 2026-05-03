@@ -60,7 +60,7 @@ import dev.cannoli.ui.DPAD_HORIZONTAL
 import dev.cannoli.ui.HALF_CIRCLE
 import dev.cannoli.ui.components.BottomBar
 import dev.cannoli.ui.components.LocalStatusBarLeftEdge
-import dev.cannoli.ui.components.OsdPill
+import dev.cannoli.ui.components.OsdHost
 import dev.cannoli.ui.components.ScreenBackground
 import dev.cannoli.ui.components.ScreenTitle
 import dev.cannoli.ui.components.StatusBar
@@ -105,7 +105,7 @@ fun LibretroScreen(
     renderer: LibretroRenderer,
     runner: LibretroRunner,
     audioSampleRate: Int,
-    osdMessage: String?,
+    osdController: dev.cannoli.ui.components.OsdController,
     fastForwarding: Boolean,
     settings: dev.cannoli.scorza.settings.SettingsRepository,
     guideFiles: List<GuideFile> = emptyList(),
@@ -630,7 +630,8 @@ fun LibretroScreen(
             }
         }
 
-        if (fastForwarding && !overlayVisible && osdMessage == null) {
+        val osdRequest = osdController.request.value
+        if (fastForwarding && !overlayVisible && osdRequest == null) {
             val colors = LocalCannoliColors.current
             Box(
                 modifier = Modifier
@@ -648,9 +649,7 @@ fun LibretroScreen(
             }
         }
 
-        if (osdMessage != null) {
-            OsdPill(message = osdMessage)
-        }
+        OsdHost(controller = osdController)
 
         if (statusBarEnabled) {
             Box(

@@ -170,9 +170,7 @@ class LibretroActivity : ComponentActivity() {
     private var undoSlot: Slot? = null
     private val undoHandler = Handler(Looper.getMainLooper())
     private val clearUndoRunnable = Runnable { clearUndo() }
-    private var osdMessage by mutableStateOf<String?>(null)
-    private val osdHandler = Handler(Looper.getMainLooper())
-    private val clearOsdRunnable = Runnable { osdMessage = null }
+    @Inject lateinit var osdController: dev.cannoli.ui.components.OsdController
     private var gameTitle: String = ""
     private var corePath: String = ""
     private var romPath: String = ""
@@ -409,7 +407,7 @@ class LibretroActivity : ComponentActivity() {
                                 renderer = renderer,
                                 runner = runner,
                                 audioSampleRate = audioSampleRate,
-                                osdMessage = osdMessage,
+                                osdController = osdController,
                                 fastForwarding = fastForwarding,
                                 settings = settings,
                                 guideFiles = guideFiles,
@@ -2259,9 +2257,7 @@ class LibretroActivity : ComponentActivity() {
     // --- OSD / Undo ---
 
     private fun showOsd(message: String) {
-        osdHandler.removeCallbacks(clearOsdRunnable)
-        osdMessage = message
-        osdHandler.postDelayed(clearOsdRunnable, 3000)
+        osdController.show(message)
     }
 
     private val raStartupHandler = Handler(Looper.getMainLooper())
@@ -2402,19 +2398,15 @@ class LibretroActivity : ComponentActivity() {
                 val portLabel = port?.let { "P${it + 1}" } ?: "-"
                 val name = port?.let { portRouter.mappingForPort(it)?.displayName?.takeIf { n -> n.isNotEmpty() } }
                     ?: device.name.ifEmpty { "Controller" }
-                osdHandler.removeCallbacks(clearOsdRunnable)
-                osdMessage = "$name connected to $portLabel"
-                osdHandler.postDelayed(clearOsdRunnable, 3000)
+                showOsd("$name connected to $portLabel")
                 if (port != null && ::runner.isInitialized) {
                     val typeId = portDeviceTypes[port] ?: LibretroRunner.DEVICE_JOYPAD
                     runner.setControllerPortDevice(port, typeId)
                 }
             }
             controllerV2Bridge.onDeviceRemoved = { departed ->
-                osdHandler.removeCallbacks(clearOsdRunnable)
                 val portLabel = departed.port?.let { "P${it + 1}: " } ?: ""
-                osdMessage = "$portLabel${departed.displayName} disconnected"
-                osdHandler.postDelayed(clearOsdRunnable, 3000)
+                showOsd("$portLabel${departed.displayName} disconnected")
                 val port = departed.port
                 if (port != null && ::runner.isInitialized && !loading) {
                     runner.setInput(port, 0)
