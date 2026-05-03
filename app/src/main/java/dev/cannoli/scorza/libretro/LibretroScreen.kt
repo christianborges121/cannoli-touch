@@ -615,7 +615,8 @@ fun LibretroScreen(
             }
         }
 
-        if (debugHud && !overlayVisible) {
+        val osdRequest = osdController.request.value
+        if (debugHud && !overlayVisible && osdRequest == null) {
             Box(
                 modifier = Modifier
                     .align(Alignment.TopStart)
