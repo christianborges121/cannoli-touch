@@ -1361,6 +1361,7 @@ class LibretroActivity : ComponentActivity() {
                 runner.reset()
                 sessionLog.log("RA reset (IGM game reset)")
                 raManager?.reset()
+                showOsd("Reset", OsdPosition.BottomCenter)
                 closeAll()
             }
             menu.achievementsIndex -> {
