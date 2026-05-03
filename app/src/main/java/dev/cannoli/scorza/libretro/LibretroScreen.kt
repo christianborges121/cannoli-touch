@@ -636,7 +636,7 @@ fun LibretroScreen(
             Box(
                 modifier = Modifier
                     .align(Alignment.TopEnd)
-                    .padding(top = 20.dp, end = 20.dp)
+                    .padding(top = 16.dp, end = 16.dp)
                     .clip(Radius.Pill)
                     .background(colors.highlight)
                     .padding(horizontal = 16.dp, vertical = 6.dp)

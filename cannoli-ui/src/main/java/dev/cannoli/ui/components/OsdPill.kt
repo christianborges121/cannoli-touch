@@ -31,13 +31,12 @@ enum class OsdPosition {
 fun BoxScope.OsdPill(
     message: String,
     position: OsdPosition = OsdPosition.TopCenter,
-    edgePadding: androidx.compose.ui.unit.Dp = 50.dp,
 ) {
     val colors = LocalCannoliColors.current
     Box(
         modifier = Modifier
             .align(position.alignment())
-            .padding(position.edgePadding(edgePadding))
+            .padding(position.edgePadding())
             .clip(Radius.Pill)
             .background(colors.highlight)
             .padding(horizontal = 16.dp, vertical = 6.dp)
@@ -62,12 +61,21 @@ private fun OsdPosition.alignment(): Alignment = when (this) {
     OsdPosition.BottomEnd -> Alignment.BottomEnd
 }
 
-private fun OsdPosition.edgePadding(edge: androidx.compose.ui.unit.Dp): androidx.compose.foundation.layout.PaddingValues {
+// Insets per position. Top/bottom-center get more breathing room (status bar / nav clearance);
+// corner anchors hug closer to the edge so they don't read as floating in the middle.
+private fun OsdPosition.edgePadding(): androidx.compose.foundation.layout.PaddingValues {
     val zero = 0.dp
-    return androidx.compose.foundation.layout.PaddingValues(
-        start = if (this == OsdPosition.TopStart || this == OsdPosition.CenterStart || this == OsdPosition.BottomStart) edge else zero,
-        end = if (this == OsdPosition.TopEnd || this == OsdPosition.CenterEnd || this == OsdPosition.BottomEnd) edge else zero,
-        top = if (this == OsdPosition.TopStart || this == OsdPosition.TopCenter || this == OsdPosition.TopEnd) edge else zero,
-        bottom = if (this == OsdPosition.BottomStart || this == OsdPosition.BottomCenter || this == OsdPosition.BottomEnd) edge else zero,
-    )
+    val center = 50.dp
+    val corner = 16.dp
+    return when (this) {
+        OsdPosition.TopCenter -> androidx.compose.foundation.layout.PaddingValues(top = center)
+        OsdPosition.BottomCenter -> androidx.compose.foundation.layout.PaddingValues(bottom = center)
+        OsdPosition.TopStart -> androidx.compose.foundation.layout.PaddingValues(top = corner, start = corner)
+        OsdPosition.TopEnd -> androidx.compose.foundation.layout.PaddingValues(top = corner, end = corner)
+        OsdPosition.BottomStart -> androidx.compose.foundation.layout.PaddingValues(bottom = corner, start = corner)
+        OsdPosition.BottomEnd -> androidx.compose.foundation.layout.PaddingValues(bottom = corner, end = corner)
+        OsdPosition.CenterStart -> androidx.compose.foundation.layout.PaddingValues(start = corner)
+        OsdPosition.CenterEnd -> androidx.compose.foundation.layout.PaddingValues(end = corner)
+        OsdPosition.Center -> androidx.compose.foundation.layout.PaddingValues(zero)
+    }
 }
