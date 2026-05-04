@@ -39,6 +39,7 @@ sealed interface DialogState {
     data object QuitConfirm : DialogState
     data class UpdateDownload(val versionName: String, val changelog: String) : DialogState
     data object RestartRequired : DialogState
+    data class IntentAuditResult(val message: String) : DialogState
 }
 
 fun DialogState.asKeyboardState(): KeyboardInputState? = this as? KeyboardInputState
@@ -123,6 +124,7 @@ val DialogState.isFullScreen: Boolean
         is DialogState.RAAccount,
         is DialogState.RALoggingIn,
         is DialogState.UpdateDownload,
-        is DialogState.RestartRequired -> true
+        is DialogState.RestartRequired,
+        is DialogState.IntentAuditResult -> true
         else -> false
     }

@@ -8,6 +8,7 @@ import dev.cannoli.scorza.config.CoreInfoRepository
 import dev.cannoli.scorza.config.PlatformConfig
 import dev.cannoli.scorza.di.IoScope
 import dev.cannoli.scorza.launcher.ApkLauncher
+import dev.cannoli.scorza.launcher.ShellLauncher
 import dev.cannoli.scorza.launcher.EmuLauncher
 import dev.cannoli.scorza.launcher.InstalledCoreService
 import dev.cannoli.scorza.launcher.LaunchManager
@@ -145,7 +146,7 @@ class SetupCoordinator @Inject constructor(
 
             val retroArchLauncher = RetroArchLauncher(context) { settings.retroArchPackage }; step()
             val emuLauncher = EmuLauncher(context); step()
-            val apkLauncher = ApkLauncher(context); step()
+            val apkLauncher = ApkLauncher(context, ShellLauncher(context)); step()
             val installedCoreService = InstalledCoreService(context); step()
             val lm = LaunchManager(context, settings, platformConfig, retroArchLauncher, emuLauncher, apkLauncher, installedCoreService); step()
             lm.syncRetroArchAssets(root); step()

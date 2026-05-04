@@ -743,6 +743,7 @@ class SettingsViewModel @Inject constructor(
         }
         "advanced" -> buildList {
             add(SettingsItem("logging", R.string.setting_logging, isEditable = true))
+            add(SettingsItem("audit_emulator_intents", R.string.setting_audit_emulator_intents, isEditable = true))
             add(SettingsItem("retroarch_diy_mode", R.string.setting_retroarch_diy_mode, valueRes = onOff(settings.retroArchDiyMode)))
             add(SettingsItem("kitchen_code_bypass", R.string.setting_kitchen_code_bypass, valueRes = onOff(settings.kitchenCodeBypass)))
             val pkgs = detectInstalledRaPackages()

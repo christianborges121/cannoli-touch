@@ -14,6 +14,7 @@ import dev.cannoli.scorza.input.LauncherActions
 import dev.cannoli.scorza.input.ScreenInputHandler
 import dev.cannoli.scorza.launcher.ApkLauncher
 import dev.cannoli.scorza.launcher.InstalledCoreService
+import dev.cannoli.scorza.launcher.IntentAuditor
 import dev.cannoli.scorza.launcher.LaunchManager
 import dev.cannoli.scorza.model.AppType
 import dev.cannoli.scorza.navigation.BrowsePurpose
@@ -44,6 +45,7 @@ class SettingsInputHandler @Inject constructor(
     private val setupCoordinator: SetupCoordinator,
     private val inputTesterController: InputTesterController,
     private val updateManager: UpdateManager,
+    private val intentAuditor: IntentAuditor,
     private val settingsViewModel: SettingsViewModel,
     private val launcherActions: LauncherActions,
     private val activityActions: ActivityActions,
@@ -118,6 +120,7 @@ class SettingsInputHandler @Inject constructor(
             "colors" -> nav.push(LauncherScreen.ColorList(colors = settingsViewModel.getColorEntries()))
             "controllers" -> nav.push(LauncherScreen.Controllers())
             "logging" -> nav.push(LauncherScreen.LoggingSettings())
+            "audit_emulator_intents" -> runIntentAudit()
             "shortcuts" -> nav.push(LauncherScreen.ShortcutBinding(shortcuts = globalOverrides.readShortcuts()))
             "input_tester" -> {
                 inputTesterController.enter()
@@ -264,6 +267,20 @@ class SettingsInputHandler @Inject constructor(
                     mappings = filterCoreMappings(all, cm.filter),
                     allMappings = all
                 )
+            }
+        }
+    }
+
+    private fun runIntentAudit() {
+        ioScope.launch {
+            val message = try {
+                val result = intentAuditor.runAudit()
+                "Audited ${result.totalInstalled} installed emulators; ${result.totalFailed} intents failed to resolve.\n\nReport: ${result.reportFile.absolutePath}"
+            } catch (e: Exception) {
+                "Audit failed: ${e.message ?: e.javaClass.simpleName}"
+            }
+            withContext(Dispatchers.Main) {
+                nav.dialogState.value = DialogState.IntentAuditResult(message)
             }
         }
     }

@@ -385,6 +385,9 @@ class DialogInputHandler @Inject constructor(
             is DialogState.RestartRequired -> {
                 activityActions.restartApp()
             }
+            is DialogState.IntentAuditResult -> {
+                nav.dialogState.value = DialogState.None
+            }
             else -> {}
         }
         return true
@@ -451,6 +454,9 @@ class DialogInputHandler @Inject constructor(
                 nav.dialogState.value = DialogState.None
             }
             is DialogState.RestartRequired -> {}
+            is DialogState.IntentAuditResult -> {
+                nav.dialogState.value = DialogState.None
+            }
             else -> {}
         }
         return true

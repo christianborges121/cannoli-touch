@@ -241,14 +241,7 @@ class LaunchManager(
         val gameOverride = platformConfig.getGameOverride(rom.path.absolutePath)
         if (gameOverride?.appPackage != null) {
             val cfg = platformConfig.getAppConfig(rom.platformTag, gameOverride.appPackage)
-            val appConfig = ApkLauncher.AppLaunchConfig(
-                activityName = cfg.activity,
-                action = cfg.action,
-                data = cfg.data,
-                extraKey = cfg.extraKey,
-                extraKind = cfg.extraKind
-            )
-            return launchResultDialog(apkLauncher.launchWithRom(gameOverride.appPackage, launchFile, appConfig))
+            return launchResultDialog(apkLauncher.launchWithRom(gameOverride.appPackage, launchFile, cfg))
         }
 
         val result = when (val target = rom.launchTarget) {
@@ -267,14 +260,7 @@ class LaunchManager(
                     val cfg = platformConfig.getFirstInstalledApp(rom.platformTag, context.packageManager)
                         ?: platformConfig.getAppPackage(rom.platformTag)?.let { platformConfig.getAppConfig(rom.platformTag, it) }
                     if (cfg != null) {
-                        val appConfig = ApkLauncher.AppLaunchConfig(
-                            activityName = cfg.activity,
-                            action = cfg.action,
-                            data = cfg.data,
-                            extraKey = cfg.extraKey,
-                            extraKind = cfg.extraKind
-                        )
-                        apkLauncher.launchWithRom(cfg.packageName, launchFile, appConfig)
+                        apkLauncher.launchWithRom(cfg.packageName, launchFile, cfg)
                     } else {
                         LaunchResult.CoreNotInstalled("unknown")
                     }
@@ -331,14 +317,7 @@ class LaunchManager(
                 }
                 if (launchFile.extension != "apk_launch" && launchFile.exists()) {
                     val cfg = platformConfig.getAppConfig(rom.platformTag, pkg)
-                    val appConfig = ApkLauncher.AppLaunchConfig(
-                        activityName = cfg.activity,
-                        action = cfg.action,
-                        data = cfg.data,
-                        extraKey = cfg.extraKey,
-                        extraKind = cfg.extraKind
-                    )
-                    apkLauncher.launchWithRom(pkg, launchFile, appConfig)
+                    apkLauncher.launchWithRom(pkg, launchFile, cfg)
                 } else {
                     apkLauncher.launch(pkg)
                 }

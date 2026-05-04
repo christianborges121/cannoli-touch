@@ -202,6 +202,7 @@
     <string name="setting_ra_status">Logged in as</string>
     <string name="setting_kitchen_toggle">File Server</string>
     <string name="setting_logging">Logging</string>
+    <string name="setting_audit_emulator_intents">Audit Emulator Intents</string>
     <string name="logging_title">Logging</string>
     <string name="logging_rom_scan">ROM Scan</string>
     <string name="logging_input">Input</string>

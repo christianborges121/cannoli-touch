@@ -1,5 +1,6 @@
 package dev.cannoli.scorza.config
 
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.res.AssetManager
 import dev.cannoli.scorza.launcher.InstalledCoreService
@@ -13,22 +14,6 @@ import org.json.JSONObject
 import java.io.File
 
 data class GameCoreOverride(val coreId: String = "", val runner: String? = null, val appPackage: String? = null, val raPackage: String? = null)
-
-data class AppConfig(
-    val packageName: String,
-    val activity: String? = null,
-    val action: String? = null,
-    val data: dev.cannoli.scorza.launcher.ApkLauncher.DataKind = dev.cannoli.scorza.launcher.ApkLauncher.DataKind.NONE,
-    val extraKey: String? = null,
-    val extraKind: dev.cannoli.scorza.launcher.ApkLauncher.DataKind = dev.cannoli.scorza.launcher.ApkLauncher.DataKind.NONE
-)
-
-private fun parseDataKind(s: String?): dev.cannoli.scorza.launcher.ApkLauncher.DataKind = when (s?.lowercase()) {
-    "saf" -> dev.cannoli.scorza.launcher.ApkLauncher.DataKind.SAF
-    "provider" -> dev.cannoli.scorza.launcher.ApkLauncher.DataKind.PROVIDER
-    "path" -> dev.cannoli.scorza.launcher.ApkLauncher.DataKind.PATH
-    else -> dev.cannoli.scorza.launcher.ApkLauncher.DataKind.NONE
-}
 
 class PlatformConfig(
     private val cannoliRoot: File,
@@ -64,17 +49,12 @@ class PlatformConfig(
             if (appArray != null) {
                 for (i in 0 until appArray.length()) {
                     val item = appArray.get(i)
-                    when (item) {
-                        is String -> list.add(AppConfig(packageName = item))
-                        is JSONObject -> list.add(AppConfig(
-                            packageName = item.getString("package"),
-                            activity = item.optString("activity").ifEmpty { null },
-                            action = item.optString("action").ifEmpty { null },
-                            data = parseDataKind(item.optString("data").ifEmpty { null }),
-                            extraKey = item.optString("extraKey").ifEmpty { null },
-                            extraKind = parseDataKind(item.optString("extraKind").ifEmpty { null })
-                        ))
+                    val obj = when (item) {
+                        is String -> JSONObject().put("package", item)
+                        is JSONObject -> item
+                        else -> throw IllegalArgumentException("platforms.json[$tag].app[$i]: expected string or object")
                     }
+                    list.add(parseAppConfig(obj))
                 }
             } else {
                 entry.optString("app", "").takeIf { it.isNotEmpty() }?.let {
@@ -613,5 +593,64 @@ class PlatformConfig(
         sb.appendLine("; Optional - overrides bundled TAG->core lookup")
         sb.appendLine("; GBA = mgba_libretro")
         file.writeText(sb.toString())
+    }
+
+    companion object {
+        fun parseAppConfigForTest(obj: JSONObject): AppConfig = parseAppConfig(obj)
+
+        private fun parseAppConfig(obj: JSONObject): AppConfig {
+            val pkg = obj.optString("package", "").ifEmpty {
+                throw IllegalArgumentException("AppConfig: missing required `package`")
+            }
+            val activity = obj.optString("activity", "").ifEmpty { null }
+            val action = obj.optString("action", "").ifEmpty { null } ?: Intent.ACTION_VIEW
+            val data = obj.optJSONObject("data")?.let(::parseDataBinding) ?: DataBinding.None
+            val extras = obj.optJSONArray("extras")?.let { arr ->
+                (0 until arr.length()).map { parseExtraSpec(arr.getJSONObject(it)) }
+            } ?: emptyList()
+            val mimeType = if (obj.has("mimeType")) {
+                if (obj.isNull("mimeType")) null else obj.getString("mimeType")
+            } else "*/*"
+            val intentFlags = obj.optInt("intentFlags", Intent.FLAG_ACTIVITY_NEW_TASK)
+            val launchMethod = parseLaunchMethod(obj.optString("launchMethod", "intent"))
+            return AppConfig(pkg, activity, action, data, extras, mimeType, intentFlags, launchMethod)
+        }
+
+        private fun parseDataBinding(obj: JSONObject): DataBinding {
+            val kind = obj.optString("kind", "")
+            return when (kind) {
+                "none" -> DataBinding.None
+                "file_provider" -> DataBinding.FileProvider(grantPermission = obj.optBoolean("grantPermission", true))
+                "absolute_path" -> DataBinding.AbsolutePath
+                "custom_scheme" -> DataBinding.CustomScheme(
+                    scheme = obj.optString("scheme").ifEmpty {
+                        throw IllegalArgumentException("custom_scheme: missing `scheme`")
+                    },
+                    authority = obj.optString("authority").ifEmpty {
+                        throw IllegalArgumentException("custom_scheme: missing `authority`")
+                    },
+                )
+                else -> throw IllegalArgumentException("Unknown data.kind: `$kind`")
+            }
+        }
+
+        private fun parseExtraSpec(obj: JSONObject): ExtraSpec {
+            val key = obj.optString("key").ifEmpty {
+                throw IllegalArgumentException("ExtraSpec: missing `key`")
+            }
+            val kind = when (obj.optString("kind")) {
+                "path" -> ExtraValueKind.FILE_PATH
+                "uri_string" -> ExtraValueKind.FILE_URI_STRING
+                "uri_parcelable" -> ExtraValueKind.FILE_URI_PARCELABLE
+                else -> throw IllegalArgumentException("ExtraSpec `${key}`: unknown kind `${obj.optString("kind")}`")
+            }
+            return ExtraSpec(key, kind)
+        }
+
+        private fun parseLaunchMethod(s: String): LaunchMethod = when (s) {
+            "intent" -> LaunchMethod.INTENT
+            "shell" -> LaunchMethod.SHELL
+            else -> throw IllegalArgumentException("Unknown launchMethod: `$s`")
+        }
     }
 }

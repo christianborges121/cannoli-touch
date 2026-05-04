@@ -192,6 +192,10 @@ fun DialogOverlay(
             RestartOverlay(message = stringResource(R.string.restart_required), buttonStyle = buttonStyle)
         }
 
+        is DialogState.IntentAuditResult -> {
+            RestartOverlay(message = dialogState.message, buttonStyle = buttonStyle)
+        }
+
         else -> {}
     }
 }
