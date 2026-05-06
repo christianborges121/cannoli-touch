@@ -32,6 +32,7 @@ class LibretroRenderer(private val runner: LibretroRunner) : GLSurfaceView.Rende
     @Volatile var paused = false
     @Volatile var fastForwardFrames = 0
     @Volatile var coreTargetFps = 60.0
+    @Volatile var lockedToVsync = false
     @Volatile var scalingMode = ScalingMode.CORE_REPORTED
     @Volatile var coreAspectRatio = 0f
     @Volatile var debugHud = false
@@ -205,6 +206,8 @@ class LibretroRenderer(private val runner: LibretroRunner) : GLSurfaceView.Rende
             if (extra > 0) {
                 runner.run()
                 for (i in 1 until extra) runner.run()
+            } else if (lockedToVsync) {
+                runner.run()
             } else {
                 val frameDurationNs = (1_000_000_000.0 / coreTargetFps).toLong()
                 frameAccumulatorNs += delta

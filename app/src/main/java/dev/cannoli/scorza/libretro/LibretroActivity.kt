@@ -622,10 +622,10 @@ class LibretroActivity : ComponentActivity() {
                         override fun onViewAttachedToWindow(v: android.view.View) { eglLog("GLSurfaceView attached to window") }
                         override fun onViewDetachedFromWindow(v: android.view.View) { eglLog("GLSurfaceView detached from window") }
                     })
-                    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
-                        val requestedFps = avInfo.fps.toFloat()
-                        holder.addCallback(object : android.view.SurfaceHolder.Callback {
-                            override fun surfaceCreated(h: android.view.SurfaceHolder) {
+                    val requestedFps = avInfo.fps.toFloat()
+                    holder.addCallback(object : android.view.SurfaceHolder.Callback {
+                        override fun surfaceCreated(h: android.view.SurfaceHolder) {
+                            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
                                 try {
                                     h.surface.setFrameRate(
                                         requestedFps,
@@ -637,10 +637,14 @@ class LibretroActivity : ComponentActivity() {
                                     sessionLog.log("setFrameRate threw: ${t.message}")
                                 }
                             }
-                            override fun surfaceChanged(h: android.view.SurfaceHolder, format: Int, width: Int, height: Int) {}
-                            override fun surfaceDestroyed(h: android.view.SurfaceHolder) {}
-                        })
-                    }
+                            val displayHz = activity.display?.refreshRate ?: 60f
+                            val mismatch = kotlin.math.abs(displayHz - requestedFps) / requestedFps
+                            glesBackend.lockedToVsync = mismatch < 0.02f
+                            sessionLog.log("vsync lock: displayHz=$displayHz coreFps=$requestedFps mismatch=${"%.4f".format(mismatch)} locked=${glesBackend.lockedToVsync}")
+                        }
+                        override fun surfaceChanged(h: android.view.SurfaceHolder, format: Int, width: Int, height: Int) {}
+                        override fun surfaceDestroyed(h: android.view.SurfaceHolder) {}
+                    })
                 }
                 gameView = glSurfaceView
                 startVsyncPacer()
