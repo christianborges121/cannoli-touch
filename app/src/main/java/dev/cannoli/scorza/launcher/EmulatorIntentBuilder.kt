@@ -38,6 +38,7 @@ object EmulatorIntentBuilder {
     fun toAndroidIntent(context: Context, resolved: ResolvedIntent, config: AppConfig): Intent {
         val intent = Intent(resolved.action).apply {
             resolved.component?.let { component = it } ?: resolved.packageName?.let(::setPackage)
+            addCategory(Intent.CATEGORY_DEFAULT)
             addFlags(config.intentFlags)
             resolved.dataUri?.let { uri ->
                 if (resolved.mimeType != null) setDataAndType(uri, resolved.mimeType)
@@ -53,17 +54,29 @@ object EmulatorIntentBuilder {
         if (resolved.dataUri != null && (config.data as? DataBinding.FileProvider)?.grantPermission == true) {
             intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
         }
+        var clipDataUri: Uri? = null
         for (extra in resolved.extras) when (extra) {
-            is ResolvedExtra.StringExtra -> intent.putExtra(extra.key, extra.value)
+            is ResolvedExtra.StringExtra -> {
+                intent.putExtra(extra.key, extra.value)
+                if (extra.value.startsWith("content://")) {
+                    val uri = Uri.parse(extra.value)
+                    context.grantUriPermission(config.packageName, uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                    if (clipDataUri == null) clipDataUri = uri
+                }
+            }
             is ResolvedExtra.UriExtra -> {
                 intent.putExtra(extra.key, extra.value)
                 context.grantUriPermission(config.packageName, extra.value, Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                if (clipDataUri == null) clipDataUri = extra.value
             }
         }
-        for (extra in resolved.extras) {
-            if (extra is ResolvedExtra.StringExtra && extra.value.startsWith("content://")) {
-                context.grantUriPermission(config.packageName, Uri.parse(extra.value), Intent.FLAG_GRANT_READ_URI_PERMISSION)
-            }
+        // Argosy pattern: when extras carry a content URI, attach it as ClipData
+        // and add the intent-level grant flag. This routes emulators with
+        // VIEW-style intent filters into the working code path even when the URI
+        // itself isn't readable by the receiver.
+        clipDataUri?.let { uri ->
+            intent.clipData = android.content.ClipData.newRawUri(null, uri)
+            intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
         }
         return intent
     }

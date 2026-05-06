@@ -68,7 +68,7 @@
             android:windowLayoutInDisplayCutoutMode="shortEdges" />
 
         <provider
-            android:name="androidx.core.content.FileProvider"
+            android:name=".launcher.CannoliFileProvider"
             android:authorities="${applicationId}.fileprovider"
             android:exported="false"
             android:grantUriPermissions="true">
