@@ -622,6 +622,25 @@ class LibretroActivity : ComponentActivity() {
                         override fun onViewAttachedToWindow(v: android.view.View) { eglLog("GLSurfaceView attached to window") }
                         override fun onViewDetachedFromWindow(v: android.view.View) { eglLog("GLSurfaceView detached from window") }
                     })
+                    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
+                        val requestedFps = avInfo.fps.toFloat()
+                        holder.addCallback(object : android.view.SurfaceHolder.Callback {
+                            override fun surfaceCreated(h: android.view.SurfaceHolder) {
+                                try {
+                                    h.surface.setFrameRate(
+                                        requestedFps,
+                                        android.view.Surface.FRAME_RATE_COMPATIBILITY_FIXED_SOURCE
+                                    )
+                                    val achieved = activity.display?.refreshRate ?: -1f
+                                    sessionLog.log("setFrameRate requested=$requestedFps achieved=$achieved")
+                                } catch (t: Throwable) {
+                                    sessionLog.log("setFrameRate threw: ${t.message}")
+                                }
+                            }
+                            override fun surfaceChanged(h: android.view.SurfaceHolder, format: Int, width: Int, height: Int) {}
+                            override fun surfaceDestroyed(h: android.view.SurfaceHolder) {}
+                        })
+                    }
                 }
                 gameView = glSurfaceView
                 startVsyncPacer()
