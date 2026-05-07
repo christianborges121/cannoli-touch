@@ -689,8 +689,24 @@ class MainActivity : ComponentActivity(), ActivityActions {
 
         nav.screenStack.clear()
         nav.screenStack.add(LauncherScreen.SystemList)
+        nav.screenStack.add(LauncherScreen.Housekeeping(
+            kind = dev.cannoli.scorza.ui.screens.HousekeepingKind.LIBRARY_REFRESH,
+            progress = 0f,
+            statusLabel = "",
+        ))
 
-        launcherActions.rescanSystemList()
+        launcherActions.rescanSystemList(
+            onProgress = { tag, current, total ->
+                val top = nav.currentScreen
+                if (top is LauncherScreen.Housekeeping &&
+                    top.kind == dev.cannoli.scorza.ui.screens.HousekeepingKind.LIBRARY_REFRESH) {
+                    nav.replaceTop(top.copy(progress = current.toFloat() / total, statusLabel = tag))
+                }
+            },
+            onComplete = {
+                if (nav.currentScreen is LauncherScreen.Housekeeping) nav.pop()
+            },
+        )
 
         val quickResume = dev.cannoli.scorza.config.CannoliPaths(root).quickResumeFile
         if (quickResume.exists()) {

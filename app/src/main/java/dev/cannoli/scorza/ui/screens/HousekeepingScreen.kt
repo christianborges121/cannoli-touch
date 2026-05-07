@@ -29,8 +29,8 @@ import dev.cannoli.ui.theme.Spacing
 
 const val HOUSEKEEPING_DEFER_MS = 250L
 
-enum class HousekeepingKind(val title: String) {
-    DATABASE_MIGRATION("Updating your library"),
+enum class HousekeepingKind(val title: String, val subtitle: String? = null) {
+    DATABASE_MIGRATION("Updating your library", "Migrating legacy data"),
     LIBRARY_REFRESH("Refreshing library"),
 }
 
@@ -68,6 +68,15 @@ fun HousekeepingScreen(
                 style = typo.bodyLarge,
                 color = GrayText
             )
+
+            if (kind.subtitle != null) {
+                Spacer(modifier = Modifier.height(Spacing.Xs))
+                Text(
+                    text = kind.subtitle,
+                    style = typo.bodyMedium,
+                    color = GrayText
+                )
+            }
 
             Spacer(modifier = Modifier.height(Spacing.Sm))
 

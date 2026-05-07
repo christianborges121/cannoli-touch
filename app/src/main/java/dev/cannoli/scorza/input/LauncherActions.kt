@@ -56,7 +56,10 @@ class LauncherActions @Inject constructor(
     private val settingsViewModel: SettingsViewModel,
 ) {
 
-    fun rescanSystemList() {
+    fun rescanSystemList(
+        onProgress: ((String, Int, Int) -> Unit)? = null,
+        onComplete: (() -> Unit)? = null,
+    ) {
         val fghStem = validateFghStem()
         gameListViewModel.showFavoriteStars = settings.contentMode != ContentMode.FIVE_GAME_HANDHELD
         systemListViewModel.scan(
@@ -65,10 +68,10 @@ class LauncherActions @Inject constructor(
             fghCollectionStem = fghStem,
             toolsName = settings.toolsName,
             portsName = settings.portsName,
+            onProgress = onProgress,
             onReady = {
-                if (fghStem != null) {
-                    scanResumableGames()
-                }
+                onComplete?.invoke()
+                if (fghStem != null) scanResumableGames()
             }
         )
     }

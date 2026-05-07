@@ -81,7 +81,7 @@ class SystemListViewModel @Inject constructor(
         savedPosition = _state.value.selectedIndex to firstVisibleIndex
     }
 
-    fun scan(showRecentlyPlayed: Boolean = true, contentMode: ContentMode = ContentMode.PLATFORMS, fghCollectionStem: String? = null, toolsName: String = "Tools", portsName: String = "Ports", onReady: () -> Unit = {}) {
+    fun scan(showRecentlyPlayed: Boolean = true, contentMode: ContentMode = ContentMode.PLATFORMS, fghCollectionStem: String? = null, toolsName: String = "Tools", portsName: String = "Ports", onProgress: ((tag: String, current: Int, total: Int) -> Unit)? = null, onReady: () -> Unit = {}) {
         val prev = _state.value
         val prevItemCount = prev.items.size
         val restored = savedPosition
@@ -91,7 +91,9 @@ class SystemListViewModel @Inject constructor(
         currentFghStem = fghCollectionStem
 
         scope.launch(Dispatchers.IO) {
-            scanAllPlatformDirs()
+            scanAllPlatformDirs { tag, current, total ->
+                withContext(Dispatchers.Main) { onProgress?.invoke(tag, current, total) }
+            }
             val countsByTag = romsRepository.platformCounts().mapKeys { it.key.uppercase() }
             val knownTagsInDb = romsRepository.knownPlatformTags()
             val knownTags = (knownTagsInDb + countsByTag.keys).distinct()
@@ -200,12 +202,13 @@ class SystemListViewModel @Inject constructor(
         }
     }
 
-    private fun scanAllPlatformDirs() {
+    private suspend fun scanAllPlatformDirs(onProgress: (suspend (String, Int, Int) -> Unit)? = null) {
         if (!romDirectory.exists()) return
         val tagDirs = romDirectory.listFiles { f -> f.isDirectory && !f.name.startsWith(".") } ?: return
-        for (dir in tagDirs) {
+        val known = tagDirs.filter { platformConfig.isKnownTag(it.name.uppercase()) }
+        known.forEachIndexed { i, dir ->
             val tag = dir.name.uppercase()
-            if (!platformConfig.isKnownTag(tag)) continue
+            onProgress?.invoke(tag, i, known.size)
             romScanner.scanPlatform(tag, isArcade = platformConfig.isArcade(tag))
         }
     }
