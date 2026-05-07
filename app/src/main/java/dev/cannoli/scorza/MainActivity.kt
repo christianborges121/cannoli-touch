@@ -383,7 +383,7 @@ class MainActivity : ComponentActivity(), ActivityActions {
         if (activeDialogState.value is DialogState.RAAccount && settings.raToken.isEmpty()) {
             activeDialogState.value = DialogState.None
         }
-        if (permissionGranted) {
+        if (permissionGranted && !systemListViewModel.state.value.isLoading) {
             rescanSystemList()
             val activeScreen = nav.currentScreen
             if (activeScreen is LauncherScreen.GameList) {
