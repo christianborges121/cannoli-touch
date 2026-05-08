@@ -270,7 +270,7 @@ fun LibretroScreen(
                     }
                     return path
                 }
-                ScreenBackground(backgroundImagePath = null, backgroundAlpha = 0.85f) {
+                ScreenBackground(backgroundImagePath = null, backgroundAlpha = 0.75f, backgroundColor = Color.Black) {
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
@@ -406,7 +406,7 @@ fun LibretroScreen(
                     stringResource(R.string.ach_unlocked_date, date)
                 } else if (ach.unlocked) stringResource(R.string.ach_unlocked) else stringResource(R.string.ach_locked)
 
-                ScreenBackground(backgroundImagePath = null, backgroundAlpha = 0.85f) {
+                ScreenBackground(backgroundImagePath = null, backgroundAlpha = 0.75f, backgroundColor = Color.Black) {
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
@@ -471,6 +471,8 @@ fun LibretroScreen(
                         screen = dev.cannoli.scorza.navigation.LauncherScreen.Controllers(selectedIndex = screen.selectedIndex),
                         viewModel = controllersViewModel,
                         modifier = Modifier.fillMaxSize(),
+                        backgroundAlpha = 0.75f,
+                        backgroundColor = Color.Black,
                         listFontSize = igmFontSize,
                         listLineHeight = igmLineHeight,
                         buttonStyle = labels,
@@ -490,6 +492,8 @@ fun LibretroScreen(
                         ),
                         mapping = mapping,
                         modifier = Modifier.fillMaxSize(),
+                        backgroundAlpha = 0.75f,
+                        backgroundColor = Color.Black,
                         listFontSize = igmFontSize,
                         listLineHeight = igmLineHeight,
                         buttonStyle = labels,
@@ -527,6 +531,8 @@ fun LibretroScreen(
                     ),
                     mapping = mapping,
                     modifier = Modifier.fillMaxSize(),
+                    backgroundAlpha = 0.75f,
+                    backgroundColor = Color.Black,
                     listFontSize = igmFontSize,
                     listLineHeight = igmLineHeight,
                     buttonStyle = labels,

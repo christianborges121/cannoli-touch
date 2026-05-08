@@ -51,6 +51,8 @@ fun ControllersScreen(
     modifier: Modifier = Modifier,
     backgroundImagePath: String? = null,
     backgroundTint: Int = 0,
+    backgroundAlpha: Float = 1f,
+    backgroundColor: androidx.compose.ui.graphics.Color? = null,
     listFontSize: TextUnit = 22.sp,
     listLineHeight: TextUnit = 32.sp,
     listVerticalPadding: Dp = 8.dp,
@@ -85,7 +87,7 @@ fun ControllersScreen(
         screen.selectedIndex.coerceIn(0, (selectableIndices.size - 1).coerceAtLeast(0))
     ) ?: -1
 
-    ScreenBackground(backgroundImagePath = backgroundImagePath, backgroundTint = backgroundTint) {
+    ScreenBackground(backgroundImagePath = backgroundImagePath, backgroundTint = backgroundTint, backgroundAlpha = backgroundAlpha, backgroundColor = backgroundColor) {
         Box(
             modifier = modifier
                 .fillMaxSize()

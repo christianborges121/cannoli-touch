@@ -56,6 +56,8 @@ fun EditButtonsScreen(
     modifier: Modifier = Modifier,
     backgroundImagePath: String? = null,
     backgroundTint: Int = 0,
+    backgroundAlpha: Float = 1f,
+    backgroundColor: androidx.compose.ui.graphics.Color? = null,
     listFontSize: TextUnit = 22.sp,
     listLineHeight: TextUnit = 32.sp,
     listVerticalPadding: Dp = 8.dp,
@@ -66,7 +68,7 @@ fun EditButtonsScreen(
     val colors = LocalCannoliColors.current
     val isListening = screen.listeningCanonical != null
 
-    ScreenBackground(backgroundImagePath = backgroundImagePath, backgroundTint = backgroundTint) {
+    ScreenBackground(backgroundImagePath = backgroundImagePath, backgroundTint = backgroundTint, backgroundAlpha = backgroundAlpha, backgroundColor = backgroundColor) {
         Box(
             modifier = modifier
                 .fillMaxSize()

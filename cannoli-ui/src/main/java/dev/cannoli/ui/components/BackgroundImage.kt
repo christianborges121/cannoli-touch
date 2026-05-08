@@ -25,12 +25,13 @@ fun ScreenBackground(
     backgroundImagePath: String?,
     backgroundTint: Int = 0,
     backgroundAlpha: Float = 1f,
+    backgroundColor: Color? = null,
     modifier: Modifier = Modifier,
     content: @Composable () -> Unit
 ) {
-    val backgroundColor = LocalCannoliColors.current.background
+    val resolvedColor = backgroundColor ?: LocalCannoliColors.current.background
     Box(modifier = modifier.fillMaxSize()) {
-        Box(modifier = Modifier.fillMaxSize().background(backgroundColor.copy(alpha = backgroundAlpha)))
+        Box(modifier = Modifier.fillMaxSize().background(resolvedColor.copy(alpha = backgroundAlpha)))
 
         if (backgroundImagePath != null) {
             val bitmap by produceState(

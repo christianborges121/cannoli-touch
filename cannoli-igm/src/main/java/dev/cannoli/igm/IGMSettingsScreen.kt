@@ -11,6 +11,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -46,7 +47,7 @@ fun IGMSettingsScreen(
     val itemHeight = pillItemHeight(lineHeight, verticalPadding)
     val colors = LocalCannoliColors.current
 
-    ScreenBackground(backgroundImagePath = null, backgroundAlpha = 0.85f) {
+    ScreenBackground(backgroundImagePath = null, backgroundAlpha = 0.75f, backgroundColor = Color.Black) {
         Box(
             modifier = Modifier
                 .fillMaxSize()
