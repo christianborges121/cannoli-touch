@@ -207,7 +207,11 @@ fun SystemListScreen(
                     val showReorder = state.reorderMode && isSelected && (item is ListItem.PlatformItem || item is ListItem.ToolsFolder || item is ListItem.PortsFolder || item is ListItem.CollectionItem || item is ListItem.GameItem)
                     val tagSuffix = (item as? ListItem.GameItem)
                         ?.takeIf { it.displayName in duplicateGameNames }
-                        ?.tags
+                        ?.let { gi ->
+                            val platformTag = (gi.item as? dev.cannoli.scorza.model.ListItem.RomItem)?.rom?.platformTag
+                            val platformPart = platformTag?.let { "(${it.uppercase()})" }
+                            listOfNotNull(platformPart, gi.tags).joinToString(" ").ifEmpty { null }
+                        }
                     PillRowText(
                         label = label,
                         isSelected = isSelected,

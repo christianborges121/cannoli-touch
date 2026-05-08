@@ -202,9 +202,17 @@ fun GameListScreen(
                                     is ListItem.AppItem -> item.app.id in favoriteAppIds
                                     else -> false
                                 }
+                                val showPlatformInSuffix = state.isCollection || state.platformTag == "recently_played"
                                 val tagSuffix = (item as? ListItem.RomItem)
                                     ?.takeIf { it.rom.displayName in duplicateRomNames }
-                                    ?.rom?.tags
+                                    ?.let { ri ->
+                                        if (showPlatformInSuffix) {
+                                            val platformPart = "(${ri.rom.platformTag.uppercase()})"
+                                            listOfNotNull(platformPart, ri.rom.tags).joinToString(" ")
+                                        } else {
+                                            ri.rom.tags
+                                        }
+                                    }
                                 val displayName = item.rowDisplayName(showStar = false)
                                 val withStar = if (starred) "$STAR $displayName" else displayName
                                 val label = if (item is ListItem.SubfolderItem) "/ $withStar" else withStar
