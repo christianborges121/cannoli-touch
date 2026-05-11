@@ -2,6 +2,8 @@ package dev.cannoli.scorza.libretro
 
 import dev.cannoli.igm.ShortcutAction
 import dev.cannoli.scorza.config.CannoliPaths
+import dev.cannoli.scorza.input.v2.CanonicalButton
+import dev.cannoli.scorza.input.v2.runtime.CanonicalRetroMap
 import dev.cannoli.scorza.util.IniParser
 import dev.cannoli.scorza.util.IniWriter
 import java.io.File
@@ -54,6 +56,7 @@ class OverrideManager(
         // Per-port libretro RETRO_DEVICE_* override. Missing entry means "use core default
         // (Joypad)". Keys are 0-indexed ports (P1=0). Values come from runner.getControllerTypes().
         var portDeviceTypes: Map<Int, Int> = emptyMap(),
+        var inputRemap: Map<CanonicalButton, Int> = emptyMap(),
     ) {
         fun frontendEquals(other: Settings): Boolean =
             scalingMode == other.scalingMode &&
@@ -74,7 +77,8 @@ class OverrideManager(
             overlay == other.overlay &&
             coreOptions == other.coreOptions &&
             shaderParams == other.shaderParams &&
-            portDeviceTypes == other.portDeviceTypes
+            portDeviceTypes == other.portDeviceTypes &&
+            inputRemap == other.inputRemap
     }
 
     fun load(): Settings {
@@ -83,10 +87,12 @@ class OverrideManager(
         applyOptions(platformFile, settings)
         applyShaderParams(platformFile, settings)
         applyPortDeviceTypes(platformFile, settings)
+        applyInputRemap(platformFile, settings)
         applyFrontend(gameFile, settings)
         applyOptions(gameFile, settings)
         applyShaderParams(gameFile, settings)
         applyPortDeviceTypes(gameFile, settings)
+        applyInputRemap(gameFile, settings)
         resolveShortcutSource(settings)
         loadShortcutsFrom(sourceFile(settings.shortcutSource), settings)
         return settings
@@ -105,6 +111,7 @@ class OverrideManager(
         applyOptions(platformFile, settings)
         applyShaderParams(platformFile, settings)
         applyPortDeviceTypes(platformFile, settings)
+        applyInputRemap(platformFile, settings)
         return settings
     }
 
@@ -123,6 +130,9 @@ class OverrideManager(
         } else {
             existing.remove("port_devices")
         }
+        val remapMap = buildInputRemapPlatformMap(settings.inputRemap)
+        if (remapMap.isNotEmpty()) existing["input_remap"] = remapMap
+        else existing.remove("input_remap")
         IniWriter.write(platformFile, existing)
     }
 
@@ -158,6 +168,10 @@ class OverrideManager(
         }
         if (portsDelta.isNotEmpty()) existing["port_devices"] = portDeviceTypesToIni(portsDelta)
         else existing.remove("port_devices")
+
+        val remapDelta = buildInputRemapGameDelta(settings.inputRemap, baseline.inputRemap)
+        if (remapDelta.isNotEmpty()) existing["input_remap"] = remapDelta
+        else existing.remove("input_remap")
 
         if (existing.any { it.value.isNotEmpty() }) IniWriter.write(gameFile, existing)
         else if (gameFile.exists()) gameFile.delete()
@@ -252,8 +266,44 @@ class OverrideManager(
         settings.portDeviceTypes = merged
     }
 
+    private fun applyInputRemap(file: File, settings: Settings) {
+        if (!file.exists()) return
+        val s = IniParser.parse(file).getSection("input_remap")
+        if (s.isEmpty()) return
+        val merged = settings.inputRemap.toMutableMap()
+        for ((key, value) in s) {
+            val canonical = enumSafe<CanonicalButton>(key) ?: continue
+            val mask = value.toIntOrNull() ?: continue
+            merged[canonical] = mask
+        }
+        settings.inputRemap = merged
+    }
+
     private fun portDeviceTypesToIni(map: Map<Int, Int>): Map<String, String> =
         map.entries.associate { (port, type) -> "p${port + 1}" to type.toString() }
+
+    private fun buildInputRemapGameDelta(
+        settings: Map<CanonicalButton, Int>,
+        baseline: Map<CanonicalButton, Int>,
+    ): Map<String, String> {
+        val out = mutableMapOf<String, String>()
+        val allButtons = settings.keys + baseline.keys
+        for (button in allButtons) {
+            val gameValue = settings[button] ?: continue
+            val baselineValue = baseline[button] ?: CanonicalRetroMap.maskOf(button)
+            if (gameValue != baselineValue) out[button.name] = gameValue.toString()
+        }
+        return out
+    }
+
+    private fun buildInputRemapPlatformMap(remap: Map<CanonicalButton, Int>): Map<String, String> {
+        val out = mutableMapOf<String, String>()
+        for ((button, mask) in remap) {
+            val default = CanonicalRetroMap.maskOf(button)
+            if (mask != default) out[button.name] = mask.toString()
+        }
+        return out
+    }
 
     private fun loadShortcutsFrom(file: File, settings: Settings) {
         if (!file.exists()) return

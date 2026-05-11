@@ -23,4 +23,7 @@ object CanonicalRetroMap {
         CanonicalButton.BTN_RIGHT -> RetroJoypad.RETRO_RIGHT
         CanonicalButton.BTN_MENU -> 0
     }
+
+    fun effectiveTarget(button: CanonicalButton, remap: Map<CanonicalButton, Int>): Int =
+        remap[button] ?: maskOf(button)
 }

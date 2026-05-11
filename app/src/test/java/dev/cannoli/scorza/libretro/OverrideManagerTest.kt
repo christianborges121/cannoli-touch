@@ -342,6 +342,232 @@ class OverrideManagerTest {
         assertEquals("INTEGER", IniParser.parse(platformFile).get("frontend", "scaling"))
     }
 
+    // ---- frontendEquals: inputRemap ----
+
+    @Test fun `frontendEquals returns false when inputRemap differs`() {
+        val a = OverrideManager.Settings(
+            inputRemap = mapOf(dev.cannoli.scorza.input.v2.CanonicalButton.BTN_SOUTH to 256),
+        )
+        val b = OverrideManager.Settings(
+            inputRemap = emptyMap(),
+        )
+        assertFalse(a.frontendEquals(b))
+        assertFalse(b.frontendEquals(a))
+    }
+
+    @Test fun `frontendEquals returns true when inputRemap matches`() {
+        val a = OverrideManager.Settings(
+            inputRemap = mapOf(
+                dev.cannoli.scorza.input.v2.CanonicalButton.BTN_SOUTH to 256,
+                dev.cannoli.scorza.input.v2.CanonicalButton.BTN_EAST to 1,
+            ),
+        )
+        val b = a.copy()
+        assertTrue(a.frontendEquals(b))
+    }
+
+    // ---- load: inputRemap ----
+
+    @Test fun `load reads inputRemap from platform ini`() {
+        writePlatformIni(
+            "PS",
+            """
+            [input_remap]
+            BTN_SOUTH=256
+            BTN_EAST=1
+            """
+        )
+        val s = manager().load()
+        assertEquals(256, s.inputRemap[dev.cannoli.scorza.input.v2.CanonicalButton.BTN_SOUTH])
+        assertEquals(1, s.inputRemap[dev.cannoli.scorza.input.v2.CanonicalButton.BTN_EAST])
+    }
+
+    @Test fun `game inputRemap overrides platform inputRemap`() {
+        writePlatformIni(
+            "PS",
+            """
+            [input_remap]
+            BTN_SOUTH=256
+            BTN_EAST=1
+            """
+        )
+        writeGameIni(
+            "PS", "Game",
+            """
+            [input_remap]
+            BTN_SOUTH=1
+            """
+        )
+        val s = manager().load()
+        assertEquals(1, s.inputRemap[dev.cannoli.scorza.input.v2.CanonicalButton.BTN_SOUTH])
+        assertEquals(1, s.inputRemap[dev.cannoli.scorza.input.v2.CanonicalButton.BTN_EAST])
+    }
+
+    @Test fun `load skips unknown CanonicalButton keys in inputRemap`() {
+        writePlatformIni(
+            "PS",
+            """
+            [input_remap]
+            BTN_SOUTH=256
+            BTN_GARBAGE=999
+            """
+        )
+        val s = manager().load()
+        assertEquals(1, s.inputRemap.size)
+        assertEquals(256, s.inputRemap[dev.cannoli.scorza.input.v2.CanonicalButton.BTN_SOUTH])
+    }
+
+    @Test fun `load skips non-integer values in inputRemap`() {
+        writePlatformIni(
+            "PS",
+            """
+            [input_remap]
+            BTN_SOUTH=256
+            BTN_EAST=notanumber
+            """
+        )
+        val s = manager().load()
+        assertEquals(1, s.inputRemap.size)
+        assertEquals(256, s.inputRemap[dev.cannoli.scorza.input.v2.CanonicalButton.BTN_SOUTH])
+    }
+
+    @Test fun `load preserves zero as a valid override (Unbound)`() {
+        writePlatformIni(
+            "PS",
+            """
+            [input_remap]
+            BTN_SOUTH=0
+            """
+        )
+        val s = manager().load()
+        assertEquals(0, s.inputRemap[dev.cannoli.scorza.input.v2.CanonicalButton.BTN_SOUTH])
+    }
+
+    // ---- savePlatform: inputRemap ----
+
+    @Test fun `savePlatform writes inputRemap entries that differ from global default`() {
+        val mgr = manager()
+        val settings = mgr.load().apply {
+            // BTN_SOUTH default is RETRO_B (1). Override to RETRO_A (256).
+            inputRemap = mapOf(
+                dev.cannoli.scorza.input.v2.CanonicalButton.BTN_SOUTH to 256,
+            )
+        }
+        mgr.savePlatform(settings)
+        val raw = paths.systemOverrideFile("PS").readText()
+        assertTrue(raw.contains("BTN_SOUTH=256") || raw.contains("BTN_SOUTH = 256"))
+    }
+
+    @Test fun `savePlatform omits inputRemap entries that equal global default`() {
+        val mgr = manager()
+        val settings = mgr.load().apply {
+            // BTN_SOUTH default is already RETRO_B (1) per CanonicalRetroMap.
+            inputRemap = mapOf(
+                dev.cannoli.scorza.input.v2.CanonicalButton.BTN_SOUTH to
+                    dev.cannoli.scorza.input.v2.runtime.CanonicalRetroMap.maskOf(
+                        dev.cannoli.scorza.input.v2.CanonicalButton.BTN_SOUTH
+                    ),
+            )
+        }
+        mgr.savePlatform(settings)
+        val raw = paths.systemOverrideFile("PS").readText()
+        assertFalse(raw.contains("BTN_SOUTH"))
+    }
+
+    @Test fun `savePlatform omits empty inputRemap section entirely`() {
+        val mgr = manager()
+        val settings = mgr.load().apply { inputRemap = emptyMap() }
+        mgr.savePlatform(settings)
+        val raw = paths.systemOverrideFile("PS").readText()
+        assertFalse(raw.contains("[input_remap]"))
+    }
+
+    @Test fun `savePlatform preserves Unbound (zero) override`() {
+        val mgr = manager()
+        val settings = mgr.load().apply {
+            inputRemap = mapOf(
+                dev.cannoli.scorza.input.v2.CanonicalButton.BTN_SELECT to 0,
+            )
+        }
+        mgr.savePlatform(settings)
+        val raw = paths.systemOverrideFile("PS").readText()
+        // BTN_SELECT default is non-zero, so 0 is a real override and must be written.
+        assertTrue(raw.contains("BTN_SELECT=0") || raw.contains("BTN_SELECT = 0"))
+    }
+
+    // ---- saveGameDelta: inputRemap ----
+
+    @Test fun `saveGameDelta writes inputRemap entries that differ from platform`() {
+        val mgr = manager()
+        val baseline = OverrideManager.Settings(
+            inputRemap = mapOf(
+                dev.cannoli.scorza.input.v2.CanonicalButton.BTN_SOUTH to 256,
+            ),
+        )
+        val settings = baseline.copy(
+            inputRemap = mapOf(
+                dev.cannoli.scorza.input.v2.CanonicalButton.BTN_SOUTH to 1,
+                dev.cannoli.scorza.input.v2.CanonicalButton.BTN_EAST to 1,
+            ),
+        )
+        mgr.saveGameDelta(settings, baseline)
+        val raw = paths.gameOverrideFile("PS", "Game").readText()
+        assertTrue(raw.contains("BTN_SOUTH=1") || raw.contains("BTN_SOUTH = 1"))
+        assertTrue(raw.contains("BTN_EAST=1") || raw.contains("BTN_EAST = 1"))
+    }
+
+    @Test fun `saveGameDelta omits inputRemap entry when game value matches global default and baseline absent`() {
+        val mgr = manager()
+        val baseline = OverrideManager.Settings(inputRemap = emptyMap())
+        val settings = baseline.copy(
+            inputRemap = mapOf(
+                dev.cannoli.scorza.input.v2.CanonicalButton.BTN_EAST to
+                    dev.cannoli.scorza.input.v2.runtime.CanonicalRetroMap.maskOf(
+                        dev.cannoli.scorza.input.v2.CanonicalButton.BTN_EAST
+                    ),
+            ),
+        )
+        mgr.saveGameDelta(settings, baseline)
+        val raw = if (paths.gameOverrideFile("PS", "Game").exists())
+            paths.gameOverrideFile("PS", "Game").readText() else ""
+        assertFalse(raw.contains("BTN_EAST"))
+    }
+
+    @Test fun `saveGameDelta omits inputRemap entries that match platform baseline`() {
+        val mgr = manager()
+        val baseline = OverrideManager.Settings(
+            inputRemap = mapOf(
+                dev.cannoli.scorza.input.v2.CanonicalButton.BTN_SOUTH to 256,
+            ),
+        )
+        val settings = baseline.copy(
+            inputRemap = mapOf(
+                dev.cannoli.scorza.input.v2.CanonicalButton.BTN_SOUTH to 256,
+            ),
+        )
+        mgr.saveGameDelta(settings, baseline)
+        val raw = if (paths.gameOverrideFile("PS", "Game").exists())
+            paths.gameOverrideFile("PS", "Game").readText() else ""
+        assertFalse(raw.contains("BTN_SOUTH"))
+    }
+
+    @Test fun `saveGameDelta writes zero override when platform had non-zero`() {
+        val mgr = manager()
+        val baseline = OverrideManager.Settings(
+            inputRemap = mapOf(
+                dev.cannoli.scorza.input.v2.CanonicalButton.BTN_SELECT to 4,
+            ),
+        )
+        val settings = baseline.copy(
+            inputRemap = mapOf(
+                dev.cannoli.scorza.input.v2.CanonicalButton.BTN_SELECT to 0,
+            ),
+        )
+        mgr.saveGameDelta(settings, baseline)
+        val raw = paths.gameOverrideFile("PS", "Game").readText()
+        assertTrue(raw.contains("BTN_SELECT=0") || raw.contains("BTN_SELECT = 0"))
+    }
+
     @Test fun `init does not overwrite an existing platform file even if a legacy file exists`() {
         val legacy = File(paths.configOverrides, "Cores/swanstation.ini")
         legacy.parentFile?.mkdirs()
