@@ -515,6 +515,7 @@ class PlatformConfig(
         "skyline.emu" to "Skyline",
         "aenu.aps3e.premium" to "aPS3e Premium",
         "org.mupen64plusae.v3.fzurita.pro" to "M64Plus FZ Pro",
+        "org.mupen64plusae.v3.fzurita.amazon" to "M64Plus FZ (Amazon)",
         "org.vita3k.emulator.ikhoeyZX" to "Vita3K ikhoeyZX",
         "com.seleuco.mame4droid" to "MAME4droid",
     )
