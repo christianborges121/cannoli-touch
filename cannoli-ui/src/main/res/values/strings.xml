@@ -282,7 +282,6 @@
 
     <!-- Boot error screen -->
     <string name="boot_error_title">Something went wrong</string>
-    <string name="label_retry">RETRY</string>
 
     <!-- Setup screen -->
     <string name="setup_welcome">Welcome to Cannoli!</string>

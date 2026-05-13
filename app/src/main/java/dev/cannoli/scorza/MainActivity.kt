@@ -350,10 +350,10 @@ class MainActivity : ComponentActivity(), ActivityActions {
         super.onResume()
         registerControllerOsd()
         bootSequencer.advance()
+        if (!isReady) return
         if (!coldStart) overridePendingTransition(0, 0)
         coldStart = false
         hideSystemUI()
-        if (!isReady) return
         launchManager.get().launching = false
         if (LibretroActivity.isRunning) {
             val intent = Intent(this, LibretroActivity::class.java)

@@ -156,6 +156,9 @@ class BootInitializer @Inject constructor(
                     }
                 }
             }
+
+            nav.screenStack.clear()
+            nav.screenStack.add(LauncherScreen.SystemList)
         }
 
         return suspendCancellableCoroutine { cont ->

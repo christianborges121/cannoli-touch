@@ -1,5 +1,6 @@
 package dev.cannoli.scorza.boot
 
+import dagger.Lazy
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -22,7 +23,7 @@ object BootProviders {
         permissionStatus: PermissionStatus,
         settings: SettingsRepository,
         setupCoordinator: SetupCoordinator,
-        initializer: BootInitializer,
+        initializer: Lazy<BootInitializer>,
         startStorageDependentHolder: StartStorageDependentHolder,
         @IoScope ioScope: CoroutineScope,
     ): BootSequencer = BootSequencer(
@@ -49,7 +50,7 @@ object BootProviders {
             settings.setupCompleted = true
         },
         startStorageDependent = { startStorageDependentHolder.invoke() },
-        initRunner = BootSequencer.InitRunner { onPhase -> initializer.run(onPhase) },
+        initRunner = BootSequencer.InitRunner { onPhase -> initializer.get().run(onPhase) },
         scope = ioScope,
     )
 }
