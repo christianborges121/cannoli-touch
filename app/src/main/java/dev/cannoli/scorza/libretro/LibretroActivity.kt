@@ -1759,6 +1759,7 @@ class LibretroActivity : ComponentActivity() {
 
     private fun filteredAchievements(screen: IGMScreen.Achievements): List<AchievementInfo> = when (screen.filter) {
         1 -> screen.achievements.filter { it.unlocked }
+        2 -> screen.achievements.filter { !it.unlocked }
         else -> screen.achievements
     }
 
@@ -1789,7 +1790,7 @@ class LibretroActivity : ComponentActivity() {
                 true
             }
             "btn_west" -> {
-                val newFilter = (screen.filter + 1) % 2
+                val newFilter = (screen.filter + 1) % 3
                 replaceTop(screen.copy(filter = newFilter, selectedIndex = 0))
                 true
             }

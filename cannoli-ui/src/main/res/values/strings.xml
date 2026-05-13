@@ -49,6 +49,7 @@
     <string name="label_details">DETAILS</string>
     <string name="label_all">ALL</string>
     <string name="label_unlocked">UNLOCKED</string>
+    <string name="label_locked">LOCKED</string>
     <string name="label_reset_all">RESET ALL</string>
     <string name="label_remap">REMAP</string>
     <string name="label_unmap">UNMAP</string>

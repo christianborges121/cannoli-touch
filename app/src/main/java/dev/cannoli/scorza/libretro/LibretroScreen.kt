@@ -377,9 +377,14 @@ fun LibretroScreen(
                 )
             }
             is IGMScreen.Achievements -> {
-                val filterLabel = when (screen.filter) { 0 -> stringResource(R.string.label_all); else -> stringResource(R.string.label_unlocked) }
+                val filterLabel = when (screen.filter) {
+                    1 -> stringResource(R.string.label_unlocked)
+                    2 -> stringResource(R.string.label_locked)
+                    else -> stringResource(R.string.label_all)
+                }
                 val filtered = when (screen.filter) {
                     1 -> screen.achievements.filter { it.unlocked }
+                    2 -> screen.achievements.filter { !it.unlocked }
                     else -> screen.achievements
                 }
                 IGMSettingsScreen(
