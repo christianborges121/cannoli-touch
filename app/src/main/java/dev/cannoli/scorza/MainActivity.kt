@@ -513,7 +513,7 @@ class MainActivity : ComponentActivity(), ActivityActions {
             return true
         }
         val handled = inputDispatcher.handleMotionEvent(event)
-        updateMenuRepeatFromMotion(event)
+        updateMenuRepeatFromMotion(event, dispatcherHandled = handled)
         return handled || super.onGenericMotionEvent(event)
     }
 
@@ -537,7 +537,7 @@ class MainActivity : ComponentActivity(), ActivityActions {
         }
     }
 
-    private fun updateMenuRepeatFromMotion(event: MotionEvent) {
+    private fun updateMenuRepeatFromMotion(event: MotionEvent, dispatcherHandled: Boolean) {
         val hatX = event.getAxisValue(MotionEvent.AXIS_HAT_X)
         val hatY = event.getAxisValue(MotionEvent.AXIS_HAT_Y)
         val stickX = event.getAxisValue(MotionEvent.AXIS_X)
@@ -554,7 +554,22 @@ class MainActivity : ComponentActivity(), ActivityActions {
         if (newDir != menuHeldDir) {
             menuRepeatHandler.removeCallbacks(menuRepeatRunnable)
             menuHeldDir = newDir
-            if (newDir != 0) menuRepeatHandler.postDelayed(menuRepeatRunnable, menuRepeatDelayMs)
+            if (newDir != 0) {
+                // Path A (the v2 mapping system) only fires for sticks that are bound as
+                // DIGITAL_BUTTON; for analog-only stick bindings, the dispatcher returns false and
+                // the first action would otherwise be deferred by menuRepeatDelayMs, which makes a
+                // quick stick tap register as nothing. Fire the first step ourselves when Path A
+                // didn't already.
+                if (!dispatcherHandled) {
+                    when (newDir) {
+                        1 -> inputDispatcher.onUp()
+                        2 -> inputDispatcher.onDown()
+                        3 -> inputDispatcher.onLeft()
+                        4 -> inputDispatcher.onRight()
+                    }
+                }
+                menuRepeatHandler.postDelayed(menuRepeatRunnable, menuRepeatDelayMs)
+            }
         }
     }
 
