@@ -11,7 +11,6 @@ import javax.inject.Inject
 
 interface PermissionStatus {
     fun hasStorage(): Boolean
-    fun hasBluetooth(): Boolean
 }
 
 class AndroidPermissionStatus @Inject constructor(
@@ -25,11 +24,4 @@ class AndroidPermissionStatus @Inject constructor(
                 context, Manifest.permission.READ_EXTERNAL_STORAGE
             ) == PackageManager.PERMISSION_GRANTED
         }
-
-    override fun hasBluetooth(): Boolean {
-        if (Build.VERSION.SDK_INT < 31) return true
-        return ContextCompat.checkSelfPermission(
-            context, Manifest.permission.BLUETOOTH_CONNECT
-        ) == PackageManager.PERMISSION_GRANTED
-    }
 }

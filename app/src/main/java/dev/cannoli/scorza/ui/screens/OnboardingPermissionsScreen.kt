@@ -91,14 +91,8 @@ fun OnboardingPermissionsScreen(
             permissions.forEachIndexed { index, perm ->
                 if (index > 0) Spacer(modifier = Modifier.height(Spacing.Md))
                 PermissionCard(
-                    label = stringResource(
-                        if (perm == OnboardingPermission.STORAGE) R.string.onboarding_storage_label
-                        else R.string.onboarding_bluetooth_label
-                    ),
-                    rationale = stringResource(
-                        if (perm == OnboardingPermission.STORAGE) R.string.onboarding_storage_rationale
-                        else R.string.onboarding_bluetooth_rationale
-                    ),
+                    label = stringResource(R.string.onboarding_storage_label),
+                    rationale = stringResource(R.string.onboarding_storage_rationale),
                     isGranted = perm in granted,
                     isFocused = index == selectedIndex,
                     accent = accent,

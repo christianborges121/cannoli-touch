@@ -11,27 +11,18 @@ class BootSequencerNextStateTest {
     private fun next(
         current: BootState,
         storage: Boolean = true,
-        bluetooth: Boolean = true,
         setupKnown: Boolean = true,
     ) = BootSequencer.nextState(
         current = current,
         hasStorage = storage,
-        hasBluetooth = bluetooth,
         setupResolved = setupKnown,
         volumes = volumes,
     )
 
     @Test fun resolving_missing_storage_goes_to_needs_permission() {
         assertEquals(
-            BootState.NeedsPermission(storageGranted = false, bluetoothGranted = true),
+            BootState.NeedsPermission(storageGranted = false),
             next(BootState.Resolving, storage = false),
-        )
-    }
-
-    @Test fun resolving_missing_bluetooth_goes_to_needs_permission() {
-        assertEquals(
-            BootState.NeedsPermission(storageGranted = true, bluetoothGranted = false),
-            next(BootState.Resolving, bluetooth = false),
         )
     }
 
@@ -45,7 +36,7 @@ class BootSequencerNextStateTest {
     }
 
     @Test fun needs_permission_re_evaluates_after_grant() {
-        assertTrue(next(BootState.NeedsPermission(false, true)) is BootState.Initializing)
+        assertTrue(next(BootState.NeedsPermission(false)) is BootState.Initializing)
     }
 
     @Test fun needs_setup_with_setup_now_known_goes_to_initializing() {
@@ -68,7 +59,7 @@ class BootSequencerNextStateTest {
 
     @Test fun losing_storage_permission_from_ready_returns_to_needs_permission() {
         assertEquals(
-            BootState.NeedsPermission(storageGranted = false, bluetoothGranted = true),
+            BootState.NeedsPermission(storageGranted = false),
             next(BootState.Ready, storage = false),
         )
     }

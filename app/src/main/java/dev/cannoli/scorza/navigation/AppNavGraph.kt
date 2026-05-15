@@ -82,7 +82,7 @@ import kotlinx.coroutines.flow.StateFlow
 
 enum class BrowsePurpose { SD_ROOT, ROM_DIRECTORY, SETUP }
 
-enum class OnboardingPermission { STORAGE, BLUETOOTH }
+enum class OnboardingPermission { STORAGE }
 
 sealed class LauncherScreen {
     interface ScrollableScreen {

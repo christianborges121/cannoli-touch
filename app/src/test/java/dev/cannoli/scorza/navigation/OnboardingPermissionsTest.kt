@@ -7,8 +7,8 @@ import org.junit.Test
 
 class OnboardingPermissionsTest {
 
-    private val bothPerms = listOf(OnboardingPermission.STORAGE, OnboardingPermission.BLUETOOTH)
-    private val allGranted = bothPerms.toSet()
+    private val storagePerm = listOf(OnboardingPermission.STORAGE)
+    private val allGranted = storagePerm.toSet()
     private val sampleVolumes = listOf(
         "Internal Storage" to "/storage/emulated/0/",
         "SD card" to "/storage/9C33-6BBD/",
@@ -16,7 +16,7 @@ class OnboardingPermissionsTest {
     )
 
     private fun screen(
-        permissions: List<OnboardingPermission> = bothPerms,
+        permissions: List<OnboardingPermission> = storagePerm,
         granted: Set<OnboardingPermission> = emptySet(),
         volumes: List<Pair<String, String>> = emptyList(),
         volumeIndex: Int = 0,
@@ -31,46 +31,39 @@ class OnboardingPermissionsTest {
         selectedIndex = selectedIndex,
     )
 
-    @Test fun movedDownAdvancesFocusThenClampsAtLastIndex() {
-        assertEquals(1, screen(selectedIndex = 0).moved(1).selectedIndex)
-        assertEquals(1, screen(selectedIndex = 1).moved(1).selectedIndex)
-    }
-
     @Test fun movedUpClampsAtZero() {
-        assertEquals(0, screen(selectedIndex = 1).moved(-1).selectedIndex)
         assertEquals(0, screen(selectedIndex = 0).moved(-1).selectedIndex)
     }
 
     @Test fun movedNeverLeavesRangeWithSingleCard() {
-        val single = screen(permissions = listOf(OnboardingPermission.STORAGE))
+        val single = screen()
         assertEquals(0, single.moved(1).selectedIndex)
         assertEquals(0, single.moved(-1).selectedIndex)
     }
 
     @Test fun focusedPermissionFollowsSelectedIndex() {
         assertEquals(OnboardingPermission.STORAGE, screen(selectedIndex = 0).focusedPermission)
-        assertEquals(OnboardingPermission.BLUETOOTH, screen(selectedIndex = 1).focusedPermission)
+        assertEquals(null, screen(granted = allGranted, selectedIndex = 1).focusedPermission)
     }
 
     @Test fun isFocusedGrantedReflectsGrantedSet() {
-        assertFalse(screen(selectedIndex = 0, granted = setOf(OnboardingPermission.BLUETOOTH)).isFocusedGranted)
+        assertFalse(screen(selectedIndex = 0, granted = emptySet()).isFocusedGranted)
         assertTrue(screen(selectedIndex = 0, granted = setOf(OnboardingPermission.STORAGE)).isFocusedGranted)
     }
 
     @Test fun allGrantedRequiresEveryListedPermission() {
-        assertFalse(screen(granted = setOf(OnboardingPermission.STORAGE)).allGranted)
-        assertTrue(screen(granted = setOf(OnboardingPermission.STORAGE, OnboardingPermission.BLUETOOTH)).allGranted)
-        assertTrue(screen(permissions = listOf(OnboardingPermission.STORAGE), granted = setOf(OnboardingPermission.STORAGE)).allGranted)
+        assertFalse(screen(granted = emptySet()).allGranted)
+        assertTrue(screen(granted = setOf(OnboardingPermission.STORAGE)).allGranted)
     }
 
     @Test fun storageRowIsReachableOnlyWhenAllGranted() {
-        val locked = screen(volumes = sampleVolumes, selectedIndex = 1)
-        assertEquals(2, locked.focusableCount)
-        assertEquals(1, locked.moved(1).selectedIndex)
+        val locked = screen(volumes = sampleVolumes, selectedIndex = 0)
+        assertEquals(1, locked.focusableCount)
+        assertEquals(0, locked.moved(1).selectedIndex)
 
-        val unlocked = screen(granted = allGranted, volumes = sampleVolumes, selectedIndex = 1)
-        assertEquals(3, unlocked.focusableCount)
-        assertEquals(2, unlocked.moved(1).selectedIndex)
+        val unlocked = screen(granted = allGranted, volumes = sampleVolumes, selectedIndex = 0)
+        assertEquals(2, unlocked.focusableCount)
+        assertEquals(1, unlocked.moved(1).selectedIndex)
         assertTrue(unlocked.moved(1).isStorageRowFocused)
         assertEquals(null, unlocked.moved(1).focusedPermission)
     }
@@ -89,7 +82,7 @@ class OnboardingPermissionsTest {
         assertTrue(screen(granted = allGranted, volumes = sampleVolumes, volumeIndex = 0).continueEnabled)
         assertFalse(screen(granted = allGranted, volumes = sampleVolumes, volumeIndex = 2).continueEnabled)
         assertTrue(screen(granted = allGranted, volumes = sampleVolumes, volumeIndex = 2, customPath = "/x/").continueEnabled)
-        assertFalse(screen(granted = setOf(OnboardingPermission.STORAGE), volumes = sampleVolumes).continueEnabled)
+        assertFalse(screen(granted = emptySet(), volumes = sampleVolumes).continueEnabled)
     }
 
     @Test fun targetPathPicksCustomOrAppendsCannoliFolder() {

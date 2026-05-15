@@ -35,7 +35,6 @@ class BootSequencer(
         val after = nextState(
             current = before,
             hasStorage = permissionStatus.hasStorage(),
-            hasBluetooth = permissionStatus.hasBluetooth(),
             setupResolved = isSetupResolved(),
             volumes = detectVolumes(),
         )
@@ -54,7 +53,6 @@ class BootSequencer(
     }
 
     fun onStoragePermissionResult() = advance()
-    fun onBluetoothPermissionResult(@Suppress("UNUSED_PARAMETER") granted: Boolean) = advance()
 
     fun retry() {
         if (_state.value is BootState.Error) {
@@ -88,12 +86,11 @@ class BootSequencer(
         fun nextState(
             current: BootState,
             hasStorage: Boolean,
-            hasBluetooth: Boolean,
             setupResolved: Boolean,
             volumes: List<Pair<String, String>>,
         ): BootState {
-            if (!hasStorage || !hasBluetooth) {
-                return BootState.NeedsPermission(storageGranted = hasStorage, bluetoothGranted = hasBluetooth)
+            if (!hasStorage) {
+                return BootState.NeedsPermission(storageGranted = false)
             }
             return when (current) {
                 is BootState.Initializing -> current

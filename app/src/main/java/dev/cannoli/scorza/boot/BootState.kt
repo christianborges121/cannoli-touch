@@ -2,7 +2,7 @@ package dev.cannoli.scorza.boot
 
 sealed interface BootState {
     data object Resolving : BootState
-    data class NeedsPermission(val storageGranted: Boolean, val bluetoothGranted: Boolean) : BootState
+    data class NeedsPermission(val storageGranted: Boolean) : BootState
     data class NeedsSetup(val volumes: List<Pair<String, String>>) : BootState
     data class Initializing(val phase: BootPhase, val progress: Float, val label: String) : BootState
     data class Error(val message: String) : BootState

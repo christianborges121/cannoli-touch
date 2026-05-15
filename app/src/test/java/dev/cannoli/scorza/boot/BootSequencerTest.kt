@@ -28,9 +28,8 @@ class BootSequencerTest {
         Dispatchers.resetMain()
     }
 
-    private class FakePerms(var storage: Boolean = true, var bluetooth: Boolean = true) : PermissionStatus {
+    private class FakePerms(var storage: Boolean = true) : PermissionStatus {
         override fun hasStorage() = storage
-        override fun hasBluetooth() = bluetooth
     }
 
     private fun sequencer(

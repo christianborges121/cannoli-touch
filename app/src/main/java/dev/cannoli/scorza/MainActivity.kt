@@ -130,13 +130,6 @@ class MainActivity : ComponentActivity(), ActivityActions {
         bootSequencer.onStoragePermissionResult()
     }
 
-    private val bluetoothPermissionLauncher = registerForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) { granted ->
-        dev.cannoli.scorza.util.InputLog.write("BLUETOOTH_CONNECT permission ${if (granted) "granted" else "denied"}")
-        bootSequencer.onBluetoothPermissionResult(granted)
-    }
-
     private fun loadLoggingPrefs() {
         dev.cannoli.scorza.util.LoggingPrefs.romScan = settings.loggingRomScan
         dev.cannoli.scorza.util.LoggingPrefs.input = settings.loggingInput
@@ -163,17 +156,12 @@ class MainActivity : ComponentActivity(), ActivityActions {
         onboardingHandler.onRequestPermission = { perm ->
             when (perm) {
                 dev.cannoli.scorza.navigation.OnboardingPermission.STORAGE -> requestStoragePermission()
-                dev.cannoli.scorza.navigation.OnboardingPermission.BLUETOOTH ->
-                    bluetoothPermissionLauncher.launch(Manifest.permission.BLUETOOTH_CONNECT)
             }
         }
         router.unregisterCoreQueryReceiver = { unregisterCoreQueryReceiver() }
         router.wire(inputDispatcher)
 
         controllerBlacklist.load(this)
-        @Suppress("UNUSED_VARIABLE") val btReady = Build.VERSION.SDK_INT < 31 || ContextCompat.checkSelfPermission(
-            this, Manifest.permission.BLUETOOTH_CONNECT
-        ) == PackageManager.PERMISSION_GRANTED
         controllerV2Bridge.start(this)
 
         onBackPressedDispatcher.addCallback(this, object : androidx.activity.OnBackPressedCallback(true) {
@@ -196,15 +184,10 @@ class MainActivity : ComponentActivity(), ActivityActions {
                         is BootState.Resolving -> Box(modifier = Modifier.fillMaxSize()) {}
                         is BootState.NeedsPermission, is BootState.NeedsSetup -> {
                             val storageGranted = (s as? BootState.NeedsPermission)?.storageGranted ?: true
-                            val bluetoothGranted = (s as? BootState.NeedsPermission)?.bluetoothGranted ?: true
-                            LaunchedEffect(storageGranted, bluetoothGranted) {
-                                val perms = buildList {
-                                    add(dev.cannoli.scorza.navigation.OnboardingPermission.STORAGE)
-                                    if (Build.VERSION.SDK_INT >= 31) add(dev.cannoli.scorza.navigation.OnboardingPermission.BLUETOOTH)
-                                }
+                            LaunchedEffect(storageGranted) {
+                                val perms = listOf(dev.cannoli.scorza.navigation.OnboardingPermission.STORAGE)
                                 val granted = buildSet {
                                     if (storageGranted) add(dev.cannoli.scorza.navigation.OnboardingPermission.STORAGE)
-                                    if (bluetoothGranted) add(dev.cannoli.scorza.navigation.OnboardingPermission.BLUETOOTH)
                                 }
                                 val volumes = setupCoordinator.detectStorageVolumes() + ("Custom" to "")
                                 val top = nav.currentScreen
