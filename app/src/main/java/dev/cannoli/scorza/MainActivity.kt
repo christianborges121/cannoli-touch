@@ -41,11 +41,11 @@ import dev.cannoli.scorza.di.AppFonts
 import dev.cannoli.scorza.input.ActivityActions
 import dev.cannoli.scorza.input.BindingController
 import dev.cannoli.scorza.input.AndroidGamepadKeyNames
-import dev.cannoli.scorza.input.v2.runtime.InputDispatcher
+import dev.cannoli.scorza.input.runtime.InputDispatcher
 import dev.cannoli.scorza.input.InputRouter
 import dev.cannoli.scorza.input.InputTesterController
 import dev.cannoli.scorza.input.LauncherActions
-import dev.cannoli.scorza.input.v2.runtime.ControllerV2Bridge
+import dev.cannoli.scorza.input.runtime.ControllerBridge
 import dev.cannoli.scorza.launcher.InstalledCoreService
 import dev.cannoli.scorza.launcher.LaunchManager
 import dev.cannoli.scorza.libretro.LibretroActivity
@@ -76,9 +76,9 @@ class MainActivity : ComponentActivity(), ActivityActions {
     @Inject lateinit var router: InputRouter
     @Inject lateinit var onboardingHandler: dev.cannoli.scorza.input.screen.OnboardingInputHandler
     @Inject lateinit var inputDispatcher: InputDispatcher
-    @Inject lateinit var controllerV2Bridge: ControllerV2Bridge
-    @Inject lateinit var portRouter: dev.cannoli.scorza.input.v2.runtime.PortRouter
-    @Inject lateinit var activeMappingHolder: dev.cannoli.scorza.input.v2.runtime.ActiveMappingHolder
+    @Inject lateinit var controllerBridge: ControllerBridge
+    @Inject lateinit var portRouter: dev.cannoli.scorza.input.runtime.PortRouter
+    @Inject lateinit var activeMappingHolder: dev.cannoli.scorza.input.runtime.ActiveMappingHolder
     @Inject lateinit var bindingController: BindingController
     @Inject lateinit var osdController: dev.cannoli.ui.components.OsdController
     @Inject lateinit var inputTesterController: InputTesterController
@@ -97,7 +97,7 @@ class MainActivity : ComponentActivity(), ActivityActions {
     @Inject lateinit var inputTesterViewModel: Provider<InputTesterViewModel>
     @Inject lateinit var controllersViewModel: Provider<dev.cannoli.scorza.ui.viewmodel.ControllersViewModel>
     @Inject lateinit var editButtonsController: dev.cannoli.scorza.input.EditButtonsController
-    @Inject lateinit var mappingRepository: Provider<dev.cannoli.scorza.input.v2.repo.MappingRepository>
+    @Inject lateinit var mappingRepository: Provider<dev.cannoli.scorza.input.repo.MappingRepository>
     @Inject lateinit var bootSequencer: BootSequencer
     @Inject lateinit var startStorageDependentHolder: StartStorageDependentHolder
     @Inject lateinit var appFonts: AppFonts
@@ -162,7 +162,7 @@ class MainActivity : ComponentActivity(), ActivityActions {
         router.wire(inputDispatcher)
 
         controllerBlacklist.load(this)
-        controllerV2Bridge.start(this)
+        controllerBridge.start(this)
 
         onBackPressedDispatcher.addCallback(this, object : androidx.activity.OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {}
@@ -288,7 +288,7 @@ class MainActivity : ComponentActivity(), ActivityActions {
         if (settings.sdCardRoot.isNotEmpty()) {
             dev.cannoli.scorza.util.InputLog.init(settings.sdCardRoot)
         }
-        controllerV2Bridge.settleNow()
+        controllerBridge.settleNow()
     }
 
     private fun buildConnectedRows(): List<dev.cannoli.scorza.ui.viewmodel.ConnectedRow> {
@@ -307,7 +307,7 @@ class MainActivity : ComponentActivity(), ActivityActions {
     }
 
     private fun registerControllerOsd() {
-        controllerV2Bridge.onDeviceAdded = { device ->
+        controllerBridge.onDeviceAdded = { device ->
             val port = portRouter.portFor(device.androidDeviceId)
             if (port != null) {
                 val name = portRouter.mappingForPort(port)?.displayName?.takeIf { it.isNotEmpty() }
@@ -315,7 +315,7 @@ class MainActivity : ComponentActivity(), ActivityActions {
                 osdController.show("P${port + 1}: $name")
             }
         }
-        controllerV2Bridge.onDeviceRemoved = { departed ->
+        controllerBridge.onDeviceRemoved = { departed ->
             val portLabel = departed.port?.let { "P${it + 1}: " } ?: ""
             osdController.show("$portLabel${departed.displayName} disconnected")
         }
@@ -355,8 +355,8 @@ class MainActivity : ComponentActivity(), ActivityActions {
 
     override fun onPause() {
         super.onPause()
-        controllerV2Bridge.onDeviceAdded = null
-        controllerV2Bridge.onDeviceRemoved = null
+        controllerBridge.onDeviceAdded = null
+        controllerBridge.onDeviceRemoved = null
         if (isReady && nav.pendingRecentlyPlayedReorder) {
             nav.pendingRecentlyPlayedReorder = false
             gameListViewModel.get().moveSelectedToTop()
@@ -364,9 +364,9 @@ class MainActivity : ComponentActivity(), ActivityActions {
     }
 
     override fun onDestroy() {
-        controllerV2Bridge.onDeviceAdded = null
-        controllerV2Bridge.onDeviceRemoved = null
-        controllerV2Bridge.stop(this)
+        controllerBridge.onDeviceAdded = null
+        controllerBridge.onDeviceRemoved = null
+        controllerBridge.stop(this)
         super.onDestroy()
         unregisterCoreQueryReceiver()
         settings.shutdown()

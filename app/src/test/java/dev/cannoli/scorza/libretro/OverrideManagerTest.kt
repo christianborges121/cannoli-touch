@@ -346,7 +346,7 @@ class OverrideManagerTest {
 
     @Test fun `frontendEquals returns false when inputRemap differs`() {
         val a = OverrideManager.Settings(
-            inputRemap = mapOf(dev.cannoli.scorza.input.v2.CanonicalButton.BTN_SOUTH to 256),
+            inputRemap = mapOf(dev.cannoli.scorza.input.CanonicalButton.BTN_SOUTH to 256),
         )
         val b = OverrideManager.Settings(
             inputRemap = emptyMap(),
@@ -358,8 +358,8 @@ class OverrideManagerTest {
     @Test fun `frontendEquals returns true when inputRemap matches`() {
         val a = OverrideManager.Settings(
             inputRemap = mapOf(
-                dev.cannoli.scorza.input.v2.CanonicalButton.BTN_SOUTH to 256,
-                dev.cannoli.scorza.input.v2.CanonicalButton.BTN_EAST to 1,
+                dev.cannoli.scorza.input.CanonicalButton.BTN_SOUTH to 256,
+                dev.cannoli.scorza.input.CanonicalButton.BTN_EAST to 1,
             ),
         )
         val b = a.copy()
@@ -378,8 +378,8 @@ class OverrideManagerTest {
             """
         )
         val s = manager().load()
-        assertEquals(256, s.inputRemap[dev.cannoli.scorza.input.v2.CanonicalButton.BTN_SOUTH])
-        assertEquals(1, s.inputRemap[dev.cannoli.scorza.input.v2.CanonicalButton.BTN_EAST])
+        assertEquals(256, s.inputRemap[dev.cannoli.scorza.input.CanonicalButton.BTN_SOUTH])
+        assertEquals(1, s.inputRemap[dev.cannoli.scorza.input.CanonicalButton.BTN_EAST])
     }
 
     @Test fun `game inputRemap overrides platform inputRemap`() {
@@ -399,8 +399,8 @@ class OverrideManagerTest {
             """
         )
         val s = manager().load()
-        assertEquals(1, s.inputRemap[dev.cannoli.scorza.input.v2.CanonicalButton.BTN_SOUTH])
-        assertEquals(1, s.inputRemap[dev.cannoli.scorza.input.v2.CanonicalButton.BTN_EAST])
+        assertEquals(1, s.inputRemap[dev.cannoli.scorza.input.CanonicalButton.BTN_SOUTH])
+        assertEquals(1, s.inputRemap[dev.cannoli.scorza.input.CanonicalButton.BTN_EAST])
     }
 
     @Test fun `load skips unknown CanonicalButton keys in inputRemap`() {
@@ -414,7 +414,7 @@ class OverrideManagerTest {
         )
         val s = manager().load()
         assertEquals(1, s.inputRemap.size)
-        assertEquals(256, s.inputRemap[dev.cannoli.scorza.input.v2.CanonicalButton.BTN_SOUTH])
+        assertEquals(256, s.inputRemap[dev.cannoli.scorza.input.CanonicalButton.BTN_SOUTH])
     }
 
     @Test fun `load skips non-integer values in inputRemap`() {
@@ -428,7 +428,7 @@ class OverrideManagerTest {
         )
         val s = manager().load()
         assertEquals(1, s.inputRemap.size)
-        assertEquals(256, s.inputRemap[dev.cannoli.scorza.input.v2.CanonicalButton.BTN_SOUTH])
+        assertEquals(256, s.inputRemap[dev.cannoli.scorza.input.CanonicalButton.BTN_SOUTH])
     }
 
     @Test fun `load preserves zero as a valid override (Unbound)`() {
@@ -440,7 +440,7 @@ class OverrideManagerTest {
             """
         )
         val s = manager().load()
-        assertEquals(0, s.inputRemap[dev.cannoli.scorza.input.v2.CanonicalButton.BTN_SOUTH])
+        assertEquals(0, s.inputRemap[dev.cannoli.scorza.input.CanonicalButton.BTN_SOUTH])
     }
 
     // ---- savePlatform: inputRemap ----
@@ -450,7 +450,7 @@ class OverrideManagerTest {
         val settings = mgr.load().apply {
             // BTN_SOUTH default is RETRO_B (1). Override to RETRO_A (256).
             inputRemap = mapOf(
-                dev.cannoli.scorza.input.v2.CanonicalButton.BTN_SOUTH to 256,
+                dev.cannoli.scorza.input.CanonicalButton.BTN_SOUTH to 256,
             )
         }
         mgr.savePlatform(settings)
@@ -463,9 +463,9 @@ class OverrideManagerTest {
         val settings = mgr.load().apply {
             // BTN_SOUTH default is already RETRO_B (1) per CanonicalRetroMap.
             inputRemap = mapOf(
-                dev.cannoli.scorza.input.v2.CanonicalButton.BTN_SOUTH to
-                    dev.cannoli.scorza.input.v2.runtime.CanonicalRetroMap.maskOf(
-                        dev.cannoli.scorza.input.v2.CanonicalButton.BTN_SOUTH
+                dev.cannoli.scorza.input.CanonicalButton.BTN_SOUTH to
+                    dev.cannoli.scorza.input.runtime.CanonicalRetroMap.maskOf(
+                        dev.cannoli.scorza.input.CanonicalButton.BTN_SOUTH
                     ),
             )
         }
@@ -486,7 +486,7 @@ class OverrideManagerTest {
         val mgr = manager()
         val settings = mgr.load().apply {
             inputRemap = mapOf(
-                dev.cannoli.scorza.input.v2.CanonicalButton.BTN_SELECT to 0,
+                dev.cannoli.scorza.input.CanonicalButton.BTN_SELECT to 0,
             )
         }
         mgr.savePlatform(settings)
@@ -501,13 +501,13 @@ class OverrideManagerTest {
         val mgr = manager()
         val baseline = OverrideManager.Settings(
             inputRemap = mapOf(
-                dev.cannoli.scorza.input.v2.CanonicalButton.BTN_SOUTH to 256,
+                dev.cannoli.scorza.input.CanonicalButton.BTN_SOUTH to 256,
             ),
         )
         val settings = baseline.copy(
             inputRemap = mapOf(
-                dev.cannoli.scorza.input.v2.CanonicalButton.BTN_SOUTH to 1,
-                dev.cannoli.scorza.input.v2.CanonicalButton.BTN_EAST to 1,
+                dev.cannoli.scorza.input.CanonicalButton.BTN_SOUTH to 1,
+                dev.cannoli.scorza.input.CanonicalButton.BTN_EAST to 1,
             ),
         )
         mgr.saveGameDelta(settings, baseline)
@@ -521,9 +521,9 @@ class OverrideManagerTest {
         val baseline = OverrideManager.Settings(inputRemap = emptyMap())
         val settings = baseline.copy(
             inputRemap = mapOf(
-                dev.cannoli.scorza.input.v2.CanonicalButton.BTN_EAST to
-                    dev.cannoli.scorza.input.v2.runtime.CanonicalRetroMap.maskOf(
-                        dev.cannoli.scorza.input.v2.CanonicalButton.BTN_EAST
+                dev.cannoli.scorza.input.CanonicalButton.BTN_EAST to
+                    dev.cannoli.scorza.input.runtime.CanonicalRetroMap.maskOf(
+                        dev.cannoli.scorza.input.CanonicalButton.BTN_EAST
                     ),
             ),
         )
@@ -537,12 +537,12 @@ class OverrideManagerTest {
         val mgr = manager()
         val baseline = OverrideManager.Settings(
             inputRemap = mapOf(
-                dev.cannoli.scorza.input.v2.CanonicalButton.BTN_SOUTH to 256,
+                dev.cannoli.scorza.input.CanonicalButton.BTN_SOUTH to 256,
             ),
         )
         val settings = baseline.copy(
             inputRemap = mapOf(
-                dev.cannoli.scorza.input.v2.CanonicalButton.BTN_SOUTH to 256,
+                dev.cannoli.scorza.input.CanonicalButton.BTN_SOUTH to 256,
             ),
         )
         mgr.saveGameDelta(settings, baseline)
@@ -555,12 +555,12 @@ class OverrideManagerTest {
         val mgr = manager()
         val baseline = OverrideManager.Settings(
             inputRemap = mapOf(
-                dev.cannoli.scorza.input.v2.CanonicalButton.BTN_SELECT to 4,
+                dev.cannoli.scorza.input.CanonicalButton.BTN_SELECT to 4,
             ),
         )
         val settings = baseline.copy(
             inputRemap = mapOf(
-                dev.cannoli.scorza.input.v2.CanonicalButton.BTN_SELECT to 0,
+                dev.cannoli.scorza.input.CanonicalButton.BTN_SELECT to 0,
             ),
         )
         mgr.saveGameDelta(settings, baseline)

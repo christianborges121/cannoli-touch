@@ -7,7 +7,7 @@ import javax.inject.Singleton
 
 /**
  * Loads `assets/controller_blacklist.json` and answers whether a device should be ignored as a
- * controller. Consumed by [dev.cannoli.scorza.input.v2.runtime.ControllerV2Bridge] during
+ * controller. Consumed by [dev.cannoli.scorza.input.runtime.ControllerBridge] during
  * device identification.
  */
 @Singleton

@@ -30,8 +30,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import dev.cannoli.igm.ShortcutAction
 import dev.cannoli.scorza.R
-import dev.cannoli.scorza.input.v2.runtime.confirmButton
-import dev.cannoli.scorza.input.v2.runtime.labelSet
+import dev.cannoli.scorza.input.runtime.confirmButton
+import dev.cannoli.scorza.input.runtime.labelSet
 import dev.cannoli.scorza.ui.LocalPortraitMargin
 import dev.cannoli.scorza.util.keyCodeName
 import dev.cannoli.scorza.ui.PortraitMarginState
@@ -138,12 +138,12 @@ sealed class LauncherScreen {
     }
     data class EditButtons(
         val mappingId: String,
-        val listeningCanonical: dev.cannoli.scorza.input.v2.CanonicalButton? = null,
+        val listeningCanonical: dev.cannoli.scorza.input.CanonicalButton? = null,
         val countdownMs: Int = 0,
         override val selectedIndex: Int = 0,
         override val scrollTarget: Int = 0,
     ) : LauncherScreen(), ScrollableScreen {
-        override val itemCount: Int get() = dev.cannoli.scorza.input.v2.CanonicalButton.entries.size
+        override val itemCount: Int get() = dev.cannoli.scorza.input.CanonicalButton.entries.size
         override fun withScroll(selectedIndex: Int, scrollTarget: Int) = copy(selectedIndex = selectedIndex, scrollTarget = scrollTarget)
     }
     data class LoggingSettings(
@@ -231,8 +231,8 @@ fun AppNavGraph(
     downloadProgress: Float = 0f,
     downloadError: String? = null,
     osdController: dev.cannoli.ui.components.OsdController,
-    activeMapping: dev.cannoli.scorza.input.v2.DeviceMapping? = null,
-    mappingRepository: dev.cannoli.scorza.input.v2.repo.MappingRepository? = null,
+    activeMapping: dev.cannoli.scorza.input.DeviceMapping? = null,
+    mappingRepository: dev.cannoli.scorza.input.repo.MappingRepository? = null,
     editButtonsController: dev.cannoli.scorza.input.EditButtonsController? = null,
     nav: dev.cannoli.scorza.navigation.NavigationController? = null,
 ) {

@@ -2,7 +2,7 @@ package dev.cannoli.scorza.input.screen
 
 import dagger.hilt.android.scopes.ActivityScoped
 import dev.cannoli.scorza.input.ScreenInputHandler
-import dev.cannoli.scorza.input.v2.DeviceMapping
+import dev.cannoli.scorza.input.DeviceMapping
 import dev.cannoli.scorza.navigation.LauncherScreen
 import dev.cannoli.scorza.navigation.NavigationController
 import dev.cannoli.scorza.ui.screens.DialogState

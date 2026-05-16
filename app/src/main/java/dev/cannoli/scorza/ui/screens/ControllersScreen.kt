@@ -18,7 +18,7 @@ import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import dev.cannoli.scorza.R
-import dev.cannoli.scorza.input.v2.DeviceMapping
+import dev.cannoli.scorza.input.DeviceMapping
 import dev.cannoli.scorza.navigation.LauncherScreen
 import dev.cannoli.scorza.ui.viewmodel.ConnectedRow
 import dev.cannoli.scorza.ui.viewmodel.ControllersViewModel

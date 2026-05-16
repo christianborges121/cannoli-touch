@@ -1,13 +1,13 @@
 package dev.cannoli.scorza.ui.viewmodel
 
 import dagger.hilt.android.scopes.ActivityScoped
-import dev.cannoli.scorza.input.v2.CanonicalButton
-import dev.cannoli.scorza.input.v2.DeviceMapping
-import dev.cannoli.scorza.input.v2.GlyphStyle
-import dev.cannoli.scorza.input.v2.repo.MappingRepository
-import dev.cannoli.scorza.input.v2.resolver.MappingResolver
-import dev.cannoli.scorza.input.v2.runtime.ActiveMappingHolder
-import dev.cannoli.scorza.input.v2.runtime.PortRouter
+import dev.cannoli.scorza.input.CanonicalButton
+import dev.cannoli.scorza.input.DeviceMapping
+import dev.cannoli.scorza.input.GlyphStyle
+import dev.cannoli.scorza.input.repo.MappingRepository
+import dev.cannoli.scorza.input.resolver.MappingResolver
+import dev.cannoli.scorza.input.runtime.ActiveMappingHolder
+import dev.cannoli.scorza.input.runtime.PortRouter
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob

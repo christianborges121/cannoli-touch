@@ -23,11 +23,11 @@ import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import dev.cannoli.scorza.R
-import dev.cannoli.scorza.input.v2.CanonicalButton
-import dev.cannoli.scorza.input.v2.DeviceMapping
-import dev.cannoli.scorza.input.v2.GlyphStyle
-import dev.cannoli.scorza.input.v2.HatDirection
-import dev.cannoli.scorza.input.v2.InputBinding
+import dev.cannoli.scorza.input.CanonicalButton
+import dev.cannoli.scorza.input.DeviceMapping
+import dev.cannoli.scorza.input.GlyphStyle
+import dev.cannoli.scorza.input.HatDirection
+import dev.cannoli.scorza.input.InputBinding
 import dev.cannoli.scorza.navigation.LauncherScreen
 import dev.cannoli.ui.ButtonStyle
 import dev.cannoli.ui.ELLIPSIS

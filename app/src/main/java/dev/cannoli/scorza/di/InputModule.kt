@@ -22,7 +22,7 @@ object InputModule {
     fun provideInputTesterController(
         activity: Activity,
         viewModel: InputTesterViewModel,
-        portRouter: dev.cannoli.scorza.input.v2.runtime.PortRouter,
+        portRouter: dev.cannoli.scorza.input.runtime.PortRouter,
     ): InputTesterController = InputTesterController(
         viewModel = viewModel,
         portRouter = portRouter,

@@ -3,8 +3,8 @@ package dev.cannoli.scorza.input.screen
 import dagger.hilt.android.scopes.ActivityScoped
 import dev.cannoli.scorza.input.EditButtonsController
 import dev.cannoli.scorza.input.ScreenInputHandler
-import dev.cannoli.scorza.input.v2.CanonicalButton
-import dev.cannoli.scorza.input.v2.repo.MappingRepository
+import dev.cannoli.scorza.input.CanonicalButton
+import dev.cannoli.scorza.input.repo.MappingRepository
 import dev.cannoli.scorza.navigation.LauncherScreen
 import dev.cannoli.scorza.navigation.NavigationController
 import dev.cannoli.scorza.ui.viewmodel.ControllersViewModel
@@ -22,8 +22,8 @@ class EditButtonsInputHandler @Inject constructor(
     private val editButtonsController: EditButtonsController,
     private val mappingRepository: MappingRepository,
     private val controllersViewModel: ControllersViewModel,
-    private val portRouter: dev.cannoli.scorza.input.v2.runtime.PortRouter,
-    private val activeMappingHolder: dev.cannoli.scorza.input.v2.runtime.ActiveMappingHolder,
+    private val portRouter: dev.cannoli.scorza.input.runtime.PortRouter,
+    private val activeMappingHolder: dev.cannoli.scorza.input.runtime.ActiveMappingHolder,
 ) : ScreenInputHandler {
 
     private fun current(): LauncherScreen.EditButtons? =

@@ -4,11 +4,11 @@ import android.os.Handler
 import android.os.Looper
 import android.view.KeyEvent
 import android.view.MotionEvent
-import dev.cannoli.scorza.input.v2.AnalogRole
-import dev.cannoli.scorza.input.v2.CanonicalButton
-import dev.cannoli.scorza.input.v2.DeviceMapping
-import dev.cannoli.scorza.input.v2.InputBinding
-import dev.cannoli.scorza.input.v2.runtime.PortRouter
+import dev.cannoli.scorza.input.AnalogRole
+import dev.cannoli.scorza.input.CanonicalButton
+import dev.cannoli.scorza.input.DeviceMapping
+import dev.cannoli.scorza.input.InputBinding
+import dev.cannoli.scorza.input.runtime.PortRouter
 import dev.cannoli.scorza.ui.viewmodel.DeviceInfo
 import dev.cannoli.scorza.ui.viewmodel.InputTesterViewModel
 

@@ -49,8 +49,8 @@ import dev.cannoli.ui.theme.CannoliColors
 import dev.cannoli.ui.theme.CannoliTheme
 import dev.cannoli.ui.theme.LocalCannoliColors
 import androidx.compose.runtime.collectAsState
-import dev.cannoli.scorza.input.v2.runtime.confirmButton
-import dev.cannoli.scorza.input.v2.runtime.labelSet
+import dev.cannoli.scorza.input.runtime.confirmButton
+import dev.cannoli.scorza.input.runtime.labelSet
 import dev.cannoli.ui.components.OsdPosition
 import dev.cannoli.ui.theme.hexToColor
 import kotlinx.coroutines.launch
@@ -62,9 +62,9 @@ import javax.inject.Inject
 class LibretroActivity : ComponentActivity() {
 
     @Inject lateinit var settings: SettingsRepository
-    @Inject lateinit var portRouter: dev.cannoli.scorza.input.v2.runtime.PortRouter
-    @Inject lateinit var controllerV2Bridge: dev.cannoli.scorza.input.v2.runtime.ControllerV2Bridge
-    @Inject lateinit var activeMappingHolder: dev.cannoli.scorza.input.v2.runtime.ActiveMappingHolder
+    @Inject lateinit var portRouter: dev.cannoli.scorza.input.runtime.PortRouter
+    @Inject lateinit var controllerBridge: dev.cannoli.scorza.input.runtime.ControllerBridge
+    @Inject lateinit var activeMappingHolder: dev.cannoli.scorza.input.runtime.ActiveMappingHolder
     @Inject lateinit var controllersViewModel: dev.cannoli.scorza.ui.viewmodel.ControllersViewModel
     @Inject lateinit var bindingController: dev.cannoli.scorza.input.BindingController
 
@@ -130,9 +130,9 @@ class LibretroActivity : ComponentActivity() {
     private var portDeviceTypes by mutableStateOf<Map<Int, Int>>(emptyMap())
 
     @Volatile
-    private var activeInputRemap: Map<dev.cannoli.scorza.input.v2.CanonicalButton, Int> = emptyMap()
+    private var activeInputRemap: Map<dev.cannoli.scorza.input.CanonicalButton, Int> = emptyMap()
 
-    private var inputRemap by mutableStateOf<Map<dev.cannoli.scorza.input.v2.CanonicalButton, Int>>(emptyMap())
+    private var inputRemap by mutableStateOf<Map<dev.cannoli.scorza.input.CanonicalButton, Int>>(emptyMap())
 
     private var shortcutSource by mutableStateOf(OverrideSource.GLOBAL)
     private var shortcuts by mutableStateOf(mapOf<ShortcutAction, Set<Int>>())
@@ -844,12 +844,12 @@ class LibretroActivity : ComponentActivity() {
         }
 
         val leftTrigger = maxOf(
-            mappingTriggerValue(mapping, dev.cannoli.scorza.input.v2.CanonicalButton.BTN_L2, event) ?: 0f,
+            mappingTriggerValue(mapping, dev.cannoli.scorza.input.CanonicalButton.BTN_L2, event) ?: 0f,
             event.getAxisValue(android.view.MotionEvent.AXIS_LTRIGGER).coerceIn(0f, 1f),
             event.getAxisValue(android.view.MotionEvent.AXIS_BRAKE).coerceIn(0f, 1f),
         )
         val rightTrigger = maxOf(
-            mappingTriggerValue(mapping, dev.cannoli.scorza.input.v2.CanonicalButton.BTN_R2, event) ?: 0f,
+            mappingTriggerValue(mapping, dev.cannoli.scorza.input.CanonicalButton.BTN_R2, event) ?: 0f,
             event.getAxisValue(android.view.MotionEvent.AXIS_RTRIGGER).coerceIn(0f, 1f),
             event.getAxisValue(android.view.MotionEvent.AXIS_GAS).coerceIn(0f, 1f),
         )
@@ -858,16 +858,16 @@ class LibretroActivity : ComponentActivity() {
 
         val stickX = event.getAxisValue(android.view.MotionEvent.AXIS_X)
         val stickY = event.getAxisValue(android.view.MotionEvent.AXIS_Y)
-        val lStickX = mostActiveStick(mappingStickValue(mapping, dev.cannoli.scorza.input.v2.AnalogRole.LEFT_STICK_X, event), stickX)
-        val lStickY = mostActiveStick(mappingStickValue(mapping, dev.cannoli.scorza.input.v2.AnalogRole.LEFT_STICK_Y, event), stickY)
+        val lStickX = mostActiveStick(mappingStickValue(mapping, dev.cannoli.scorza.input.AnalogRole.LEFT_STICK_X, event), stickX)
+        val lStickY = mostActiveStick(mappingStickValue(mapping, dev.cannoli.scorza.input.AnalogRole.LEFT_STICK_Y, event), stickY)
         runner.setAnalog(port, 0, (lStickX * 32767).toInt().coerceIn(-32768, 32767),
             (lStickY * 32767).toInt().coerceIn(-32768, 32767))
         val rStickX = mostActiveStick(
-            mappingStickValue(mapping, dev.cannoli.scorza.input.v2.AnalogRole.RIGHT_STICK_X, event),
+            mappingStickValue(mapping, dev.cannoli.scorza.input.AnalogRole.RIGHT_STICK_X, event),
             event.getAxisValue(android.view.MotionEvent.AXIS_Z),
         )
         val rStickY = mostActiveStick(
-            mappingStickValue(mapping, dev.cannoli.scorza.input.v2.AnalogRole.RIGHT_STICK_Y, event),
+            mappingStickValue(mapping, dev.cannoli.scorza.input.AnalogRole.RIGHT_STICK_Y, event),
             event.getAxisValue(android.view.MotionEvent.AXIS_RZ),
         )
         runner.setAnalog(port, 1, (rStickX * 32767).toInt().coerceIn(-32768, 32767),
@@ -875,7 +875,7 @@ class LibretroActivity : ComponentActivity() {
         return true
     }
 
-    private fun evaluatorForPort(port: Int): dev.cannoli.scorza.input.v2.runtime.PortEvaluator? {
+    private fun evaluatorForPort(port: Int): dev.cannoli.scorza.input.runtime.PortEvaluator? {
         val snap = portRouter.snapshotEntries().firstOrNull { it.port == port } ?: return null
         return portRouter.evaluatorFor(snap.androidDeviceId)
     }
@@ -888,13 +888,13 @@ class LibretroActivity : ComponentActivity() {
         val remap = activeInputRemap
         var mask = 0
         for (cb in eval.currentlyPressed()) {
-            mask = mask or dev.cannoli.scorza.input.v2.runtime.CanonicalRetroMap.effectiveTarget(cb, remap)
+            mask = mask or dev.cannoli.scorza.input.runtime.CanonicalRetroMap.effectiveTarget(cb, remap)
         }
         runner.setInput(port, mask)
     }
 
     private fun collectMotionAxes(
-        mapping: dev.cannoli.scorza.input.v2.DeviceMapping?,
+        mapping: dev.cannoli.scorza.input.DeviceMapping?,
         event: android.view.MotionEvent,
     ): Map<Int, Float> {
         val axes = mutableSetOf<Int>()
@@ -902,9 +902,9 @@ class LibretroActivity : ComponentActivity() {
             for ((_, bindings) in mapping.bindings) {
                 for (binding in bindings) {
                     when (binding) {
-                        is dev.cannoli.scorza.input.v2.InputBinding.Axis -> axes.add(binding.axis)
-                        is dev.cannoli.scorza.input.v2.InputBinding.Hat -> axes.add(binding.axis)
-                        is dev.cannoli.scorza.input.v2.InputBinding.Button -> Unit
+                        is dev.cannoli.scorza.input.InputBinding.Axis -> axes.add(binding.axis)
+                        is dev.cannoli.scorza.input.InputBinding.Hat -> axes.add(binding.axis)
+                        is dev.cannoli.scorza.input.InputBinding.Button -> Unit
                     }
                 }
             }
@@ -918,26 +918,26 @@ class LibretroActivity : ComponentActivity() {
     }
 
     private fun mappingTriggerValue(
-        mapping: dev.cannoli.scorza.input.v2.DeviceMapping?,
-        canonical: dev.cannoli.scorza.input.v2.CanonicalButton,
+        mapping: dev.cannoli.scorza.input.DeviceMapping?,
+        canonical: dev.cannoli.scorza.input.CanonicalButton,
         event: android.view.MotionEvent,
     ): Float? {
         val axisBinding = mapping?.bindings?.get(canonical)
-            ?.firstNotNullOfOrNull { it as? dev.cannoli.scorza.input.v2.InputBinding.Axis }
-            ?.takeIf { it.analogRole == dev.cannoli.scorza.input.v2.AnalogRole.DIGITAL_BUTTON }
+            ?.firstNotNullOfOrNull { it as? dev.cannoli.scorza.input.InputBinding.Axis }
+            ?.takeIf { it.analogRole == dev.cannoli.scorza.input.AnalogRole.DIGITAL_BUTTON }
             ?: return null
         return axisBinding.normalize(event.getAxisValue(axisBinding.axis))
     }
 
     private fun mappingStickValue(
-        mapping: dev.cannoli.scorza.input.v2.DeviceMapping?,
-        role: dev.cannoli.scorza.input.v2.AnalogRole,
+        mapping: dev.cannoli.scorza.input.DeviceMapping?,
+        role: dev.cannoli.scorza.input.AnalogRole,
         event: android.view.MotionEvent,
     ): Float? {
         val axisBinding = mapping?.bindings?.values
             ?.flatten()
             ?.firstNotNullOfOrNull {
-                (it as? dev.cannoli.scorza.input.v2.InputBinding.Axis)?.takeIf { axis -> axis.analogRole == role }
+                (it as? dev.cannoli.scorza.input.InputBinding.Axis)?.takeIf { axis -> axis.analogRole == role }
             }
             ?: return null
         val raw = event.getAxisValue(axisBinding.axis)
@@ -1075,7 +1075,7 @@ class LibretroActivity : ComponentActivity() {
         }
         val mapping = portRouter.mappingFor(deviceId) ?: activeMappingHolder.active.value
         val canonical = mapping?.bindings?.entries?.firstOrNull { (_, bindings) ->
-            bindings.any { it is dev.cannoli.scorza.input.v2.InputBinding.Button && it.keyCode == keyCode }
+            bindings.any { it is dev.cannoli.scorza.input.InputBinding.Button && it.keyCode == keyCode }
         }?.key
         val pref = canonical?.let { canonicalToNavName(it) }
             ?: NAV_FALLBACK_KEY_MAP[keyCode]
@@ -1089,24 +1089,24 @@ class LibretroActivity : ComponentActivity() {
         } else pref
     }
 
-    private fun canonicalToNavName(c: dev.cannoli.scorza.input.v2.CanonicalButton): String = when (c) {
-        dev.cannoli.scorza.input.v2.CanonicalButton.BTN_SOUTH -> "btn_south"
-        dev.cannoli.scorza.input.v2.CanonicalButton.BTN_EAST -> "btn_east"
-        dev.cannoli.scorza.input.v2.CanonicalButton.BTN_WEST -> "btn_west"
-        dev.cannoli.scorza.input.v2.CanonicalButton.BTN_NORTH -> "btn_north"
-        dev.cannoli.scorza.input.v2.CanonicalButton.BTN_UP -> "btn_up"
-        dev.cannoli.scorza.input.v2.CanonicalButton.BTN_DOWN -> "btn_down"
-        dev.cannoli.scorza.input.v2.CanonicalButton.BTN_LEFT -> "btn_left"
-        dev.cannoli.scorza.input.v2.CanonicalButton.BTN_RIGHT -> "btn_right"
-        dev.cannoli.scorza.input.v2.CanonicalButton.BTN_L -> "btn_l"
-        dev.cannoli.scorza.input.v2.CanonicalButton.BTN_R -> "btn_r"
-        dev.cannoli.scorza.input.v2.CanonicalButton.BTN_L2 -> "btn_l2"
-        dev.cannoli.scorza.input.v2.CanonicalButton.BTN_R2 -> "btn_r2"
-        dev.cannoli.scorza.input.v2.CanonicalButton.BTN_L3 -> "btn_l3"
-        dev.cannoli.scorza.input.v2.CanonicalButton.BTN_R3 -> "btn_r3"
-        dev.cannoli.scorza.input.v2.CanonicalButton.BTN_START -> "btn_start"
-        dev.cannoli.scorza.input.v2.CanonicalButton.BTN_SELECT -> "btn_select"
-        dev.cannoli.scorza.input.v2.CanonicalButton.BTN_MENU -> "btn_menu"
+    private fun canonicalToNavName(c: dev.cannoli.scorza.input.CanonicalButton): String = when (c) {
+        dev.cannoli.scorza.input.CanonicalButton.BTN_SOUTH -> "btn_south"
+        dev.cannoli.scorza.input.CanonicalButton.BTN_EAST -> "btn_east"
+        dev.cannoli.scorza.input.CanonicalButton.BTN_WEST -> "btn_west"
+        dev.cannoli.scorza.input.CanonicalButton.BTN_NORTH -> "btn_north"
+        dev.cannoli.scorza.input.CanonicalButton.BTN_UP -> "btn_up"
+        dev.cannoli.scorza.input.CanonicalButton.BTN_DOWN -> "btn_down"
+        dev.cannoli.scorza.input.CanonicalButton.BTN_LEFT -> "btn_left"
+        dev.cannoli.scorza.input.CanonicalButton.BTN_RIGHT -> "btn_right"
+        dev.cannoli.scorza.input.CanonicalButton.BTN_L -> "btn_l"
+        dev.cannoli.scorza.input.CanonicalButton.BTN_R -> "btn_r"
+        dev.cannoli.scorza.input.CanonicalButton.BTN_L2 -> "btn_l2"
+        dev.cannoli.scorza.input.CanonicalButton.BTN_R2 -> "btn_r2"
+        dev.cannoli.scorza.input.CanonicalButton.BTN_L3 -> "btn_l3"
+        dev.cannoli.scorza.input.CanonicalButton.BTN_R3 -> "btn_r3"
+        dev.cannoli.scorza.input.CanonicalButton.BTN_START -> "btn_start"
+        dev.cannoli.scorza.input.CanonicalButton.BTN_SELECT -> "btn_select"
+        dev.cannoli.scorza.input.CanonicalButton.BTN_MENU -> "btn_menu"
     }
 
 
@@ -1142,8 +1142,8 @@ class LibretroActivity : ComponentActivity() {
         val evaluator = evaluatorForPort(port)
         val mapping = portRouter.mappingForPort(port)
         val mapsToCanonical = evaluator?.keyCodeIsBound(keyCode) == true
-        val opensMenu = mapping?.bindings?.get(dev.cannoli.scorza.input.v2.CanonicalButton.BTN_MENU)
-            ?.any { it is dev.cannoli.scorza.input.v2.InputBinding.Button && it.keyCode == keyCode } == true
+        val opensMenu = mapping?.bindings?.get(dev.cannoli.scorza.input.CanonicalButton.BTN_MENU)
+            ?.any { it is dev.cannoli.scorza.input.InputBinding.Button && it.keyCode == keyCode } == true
         if (opensMenu) { openMenu(); return true }
         // Don't early-return on synthetic-trigger held: portPressedKeys.add already dedupes for
         // chord detection, and on devices whose trigger axis rests at 0 the mapping importer
@@ -2244,12 +2244,12 @@ class LibretroActivity : ComponentActivity() {
     }
 
     private fun buildButtonsItems(screen: IGMScreen.Buttons): List<IGMSettingsItem> = buildList {
-        val canonicals = dev.cannoli.scorza.input.v2.CanonicalButton.entries
-            .filter { it != dev.cannoli.scorza.input.v2.CanonicalButton.BTN_MENU }
+        val canonicals = dev.cannoli.scorza.input.CanonicalButton.entries
+            .filter { it != dev.cannoli.scorza.input.CanonicalButton.BTN_MENU }
         for (cb in canonicals) {
             val isListening = screen.listeningCanonical == cb.name
             val effective = inputRemap[cb]
-                ?: dev.cannoli.scorza.input.v2.runtime.CanonicalRetroMap.maskOf(cb)
+                ?: dev.cannoli.scorza.input.runtime.CanonicalRetroMap.maskOf(cb)
             val value = when {
                 isListening -> dev.cannoli.ui.ELLIPSIS
                 effective == 0 -> "—"
@@ -2259,24 +2259,24 @@ class LibretroActivity : ComponentActivity() {
         }
     }
 
-    private fun canonicalLabel(cb: dev.cannoli.scorza.input.v2.CanonicalButton): String = when (cb) {
-        dev.cannoli.scorza.input.v2.CanonicalButton.BTN_SOUTH -> "South"
-        dev.cannoli.scorza.input.v2.CanonicalButton.BTN_EAST -> "East"
-        dev.cannoli.scorza.input.v2.CanonicalButton.BTN_WEST -> "West"
-        dev.cannoli.scorza.input.v2.CanonicalButton.BTN_NORTH -> "North"
-        dev.cannoli.scorza.input.v2.CanonicalButton.BTN_L -> "L"
-        dev.cannoli.scorza.input.v2.CanonicalButton.BTN_R -> "R"
-        dev.cannoli.scorza.input.v2.CanonicalButton.BTN_L2 -> "L2"
-        dev.cannoli.scorza.input.v2.CanonicalButton.BTN_R2 -> "R2"
-        dev.cannoli.scorza.input.v2.CanonicalButton.BTN_L3 -> "L3"
-        dev.cannoli.scorza.input.v2.CanonicalButton.BTN_R3 -> "R3"
-        dev.cannoli.scorza.input.v2.CanonicalButton.BTN_START -> "Start"
-        dev.cannoli.scorza.input.v2.CanonicalButton.BTN_SELECT -> "Select"
-        dev.cannoli.scorza.input.v2.CanonicalButton.BTN_UP -> "Up"
-        dev.cannoli.scorza.input.v2.CanonicalButton.BTN_DOWN -> "Down"
-        dev.cannoli.scorza.input.v2.CanonicalButton.BTN_LEFT -> "Left"
-        dev.cannoli.scorza.input.v2.CanonicalButton.BTN_RIGHT -> "Right"
-        dev.cannoli.scorza.input.v2.CanonicalButton.BTN_MENU -> "Menu"
+    private fun canonicalLabel(cb: dev.cannoli.scorza.input.CanonicalButton): String = when (cb) {
+        dev.cannoli.scorza.input.CanonicalButton.BTN_SOUTH -> "South"
+        dev.cannoli.scorza.input.CanonicalButton.BTN_EAST -> "East"
+        dev.cannoli.scorza.input.CanonicalButton.BTN_WEST -> "West"
+        dev.cannoli.scorza.input.CanonicalButton.BTN_NORTH -> "North"
+        dev.cannoli.scorza.input.CanonicalButton.BTN_L -> "L"
+        dev.cannoli.scorza.input.CanonicalButton.BTN_R -> "R"
+        dev.cannoli.scorza.input.CanonicalButton.BTN_L2 -> "L2"
+        dev.cannoli.scorza.input.CanonicalButton.BTN_R2 -> "R2"
+        dev.cannoli.scorza.input.CanonicalButton.BTN_L3 -> "L3"
+        dev.cannoli.scorza.input.CanonicalButton.BTN_R3 -> "R3"
+        dev.cannoli.scorza.input.CanonicalButton.BTN_START -> "Start"
+        dev.cannoli.scorza.input.CanonicalButton.BTN_SELECT -> "Select"
+        dev.cannoli.scorza.input.CanonicalButton.BTN_UP -> "Up"
+        dev.cannoli.scorza.input.CanonicalButton.BTN_DOWN -> "Down"
+        dev.cannoli.scorza.input.CanonicalButton.BTN_LEFT -> "Left"
+        dev.cannoli.scorza.input.CanonicalButton.BTN_RIGHT -> "Right"
+        dev.cannoli.scorza.input.CanonicalButton.BTN_MENU -> "Menu"
     }
 
     private fun retroMaskLabel(mask: Int): String = when (mask) {
@@ -2516,9 +2516,9 @@ class LibretroActivity : ComponentActivity() {
         stopVsyncPacer()
         glSurfaceView?.onPause()
         if (!loading && !cleaned && sramPath.isNotEmpty()) { File(sramPath).parentFile?.mkdirs(); runner.saveSRAM(sramPath) }
-        if (::controllerV2Bridge.isInitialized) {
-            controllerV2Bridge.onDeviceAdded = null
-            controllerV2Bridge.onDeviceRemoved = null
+        if (::controllerBridge.isInitialized) {
+            controllerBridge.onDeviceAdded = null
+            controllerBridge.onDeviceRemoved = null
         }
     }
 
@@ -2547,8 +2547,8 @@ class LibretroActivity : ComponentActivity() {
         if (::sessionLog.isInitialized) sessionLog.log("onResume")
         if (autoSavedOnStop && cannoliRoot.isNotEmpty()) dev.cannoli.scorza.config.CannoliPaths(cannoliRoot).quickResumeFile.delete()
         autoSavedOnStop = false
-        if (::controllerV2Bridge.isInitialized) {
-            controllerV2Bridge.onDeviceAdded = { device ->
+        if (::controllerBridge.isInitialized) {
+            controllerBridge.onDeviceAdded = { device ->
                 val port = portRouter.portFor(device.androidDeviceId)
                 val portLabel = port?.let { "P${it + 1}" } ?: "-"
                 val name = port?.let { portRouter.mappingForPort(it)?.displayName?.takeIf { n -> n.isNotEmpty() } }
@@ -2559,7 +2559,7 @@ class LibretroActivity : ComponentActivity() {
                     runner.setControllerPortDevice(port, typeId)
                 }
             }
-            controllerV2Bridge.onDeviceRemoved = { departed ->
+            controllerBridge.onDeviceRemoved = { departed ->
                 val portLabel = departed.port?.let { "P${it + 1}: " } ?: ""
                 showOsd("$portLabel${departed.displayName} disconnected")
                 val port = departed.port
@@ -2584,9 +2584,9 @@ class LibretroActivity : ComponentActivity() {
             sessionLog.close()
         }
         isRunning = false
-        if (::controllerV2Bridge.isInitialized) {
-            controllerV2Bridge.onDeviceAdded = null
-            controllerV2Bridge.onDeviceRemoved = null
+        if (::controllerBridge.isInitialized) {
+            controllerBridge.onDeviceAdded = null
+            controllerBridge.onDeviceRemoved = null
         }
         super.onDestroy()
         cleanup()
@@ -2668,14 +2668,14 @@ class LibretroActivity : ComponentActivity() {
     private fun deviceForPort(port: Int): Int? =
         portRouter.snapshotEntries().firstOrNull { it.port == port }?.androidDeviceId
 
-    private val buttonsCanonicals: List<dev.cannoli.scorza.input.v2.CanonicalButton>
-        get() = dev.cannoli.scorza.input.v2.CanonicalButton.entries
-            .filter { it != dev.cannoli.scorza.input.v2.CanonicalButton.BTN_MENU }
+    private val buttonsCanonicals: List<dev.cannoli.scorza.input.CanonicalButton>
+        get() = dev.cannoli.scorza.input.CanonicalButton.entries
+            .filter { it != dev.cannoli.scorza.input.CanonicalButton.BTN_MENU }
 
-    private fun resolveCanonicalForBinding(keyCode: Int, deviceId: Int): dev.cannoli.scorza.input.v2.CanonicalButton? {
+    private fun resolveCanonicalForBinding(keyCode: Int, deviceId: Int): dev.cannoli.scorza.input.CanonicalButton? {
         val mapping = portRouter.mappingFor(deviceId) ?: activeMappingHolder.active.value ?: return null
         return mapping.bindings.entries.firstOrNull { (_, bindings) ->
-            bindings.any { it is dev.cannoli.scorza.input.v2.InputBinding.Button && it.keyCode == keyCode }
+            bindings.any { it is dev.cannoli.scorza.input.InputBinding.Button && it.keyCode == keyCode }
         }?.key
     }
 
@@ -2695,7 +2695,7 @@ class LibretroActivity : ComponentActivity() {
             val pressed = resolveCanonicalForBinding(keyCode, deviceId) ?: return true
             val target = canonicals.firstOrNull { it.name == screen.listeningCanonical } ?: return true
             inputRemap = inputRemap.toMutableMap().also {
-                it[target] = dev.cannoli.scorza.input.v2.runtime.CanonicalRetroMap.maskOf(pressed)
+                it[target] = dev.cannoli.scorza.input.runtime.CanonicalRetroMap.maskOf(pressed)
             }
             replaceTop(screen.copy(listeningCanonical = null))
             return true

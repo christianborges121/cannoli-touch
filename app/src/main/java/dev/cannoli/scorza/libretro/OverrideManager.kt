@@ -2,8 +2,8 @@ package dev.cannoli.scorza.libretro
 
 import dev.cannoli.igm.ShortcutAction
 import dev.cannoli.scorza.config.CannoliPaths
-import dev.cannoli.scorza.input.v2.CanonicalButton
-import dev.cannoli.scorza.input.v2.runtime.CanonicalRetroMap
+import dev.cannoli.scorza.input.CanonicalButton
+import dev.cannoli.scorza.input.runtime.CanonicalRetroMap
 import dev.cannoli.scorza.util.IniParser
 import dev.cannoli.scorza.util.IniWriter
 import java.io.File

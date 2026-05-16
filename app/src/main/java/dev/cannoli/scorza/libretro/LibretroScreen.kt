@@ -39,8 +39,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
-import dev.cannoli.scorza.input.v2.runtime.confirmButton
-import dev.cannoli.scorza.input.v2.runtime.labelSet
+import dev.cannoli.scorza.input.runtime.confirmButton
+import dev.cannoli.scorza.input.runtime.labelSet
 import dev.cannoli.igm.GuideScreen
 import dev.cannoli.igm.GuideType
 import dev.cannoli.igm.IGMScreen
@@ -119,7 +119,7 @@ fun LibretroScreen(
     onGuideScrollChanged: (y: Int, x: Int) -> Unit = { _, _ -> },
     infoScrollDir: Int = 0,
     gameInfo: GameInfo = GameInfo("", "", null),
-    activeMapping: dev.cannoli.scorza.input.v2.DeviceMapping? = null,
+    activeMapping: dev.cannoli.scorza.input.DeviceMapping? = null,
     controllersViewModel: dev.cannoli.scorza.ui.viewmodel.ControllersViewModel? = null,
     inputRemapHasChanges: Boolean = false,
 ) {

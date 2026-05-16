@@ -1,11 +1,11 @@
 package dev.cannoli.scorza.input
 
-import dev.cannoli.scorza.input.v2.CanonicalButton
-import dev.cannoli.scorza.input.v2.DeviceMatchRule
-import dev.cannoli.scorza.input.v2.DeviceMapping
-import dev.cannoli.scorza.input.v2.InputBinding
-import dev.cannoli.scorza.input.v2.MappingSource
-import dev.cannoli.scorza.input.v2.repo.MappingRepository
+import dev.cannoli.scorza.input.CanonicalButton
+import dev.cannoli.scorza.input.DeviceMatchRule
+import dev.cannoli.scorza.input.DeviceMapping
+import dev.cannoli.scorza.input.InputBinding
+import dev.cannoli.scorza.input.MappingSource
+import dev.cannoli.scorza.input.repo.MappingRepository
 import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Rule
@@ -23,8 +23,8 @@ class EditButtonsControllerTest {
         repo = MappingRepository(tmp.newFolder("templates"))
         controller = EditButtonsController(
             repository = repo,
-            portRouter = dev.cannoli.scorza.input.v2.runtime.PortRouter(),
-            activeMappingHolder = dev.cannoli.scorza.input.v2.runtime.ActiveMappingHolder(),
+            portRouter = dev.cannoli.scorza.input.runtime.PortRouter(),
+            activeMappingHolder = dev.cannoli.scorza.input.runtime.ActiveMappingHolder(),
         ).also { it.clock = { clockMs } }
     }
 

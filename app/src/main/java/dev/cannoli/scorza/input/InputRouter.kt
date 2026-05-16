@@ -23,7 +23,7 @@ import dev.cannoli.scorza.settings.GlobalOverridesManager
 import dev.cannoli.scorza.ui.components.CREDITS
 import dev.cannoli.scorza.ui.screens.CoreMappingEntry
 import dev.cannoli.scorza.ui.screens.DialogState
-import dev.cannoli.scorza.input.v2.runtime.InputDispatcher
+import dev.cannoli.scorza.input.runtime.InputDispatcher
 import javax.inject.Inject
 
 @ActivityScoped
