@@ -278,7 +278,7 @@
     <string name="onboarding_header">SET UP CANNOLI</string>
     <string name="onboarding_permissions_title">Permissions and Storage</string>
     <string name="onboarding_storage_label">Storage access</string>
-    <string name="onboarding_storage_rationale">Cannoli needs access to your ROMs, saves, art, and more. Without it, Cannoli can\'t do anything.</string>
+    <string name="onboarding_storage_rationale">Cannoli needs access to your ROMs, saves, art, and more.\nWithout this, Cannoli cannot do anything.</string>
     <string name="onboarding_status_granted">Granted</string>
     <string name="onboarding_status_not_granted">Not granted</string>
     <string name="onboarding_press_a_to_grant">Press A to grant</string>
