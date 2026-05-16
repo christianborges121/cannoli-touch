@@ -210,10 +210,11 @@ class Importer(
             )
             byStem[stem] = collectionId
 
+            var memberIndex = 0
             for (path in readLegacyCollectionMembers(stem)) {
                 when (val ref = resolveLegacyPath(path, romIdsByRelative, toolNames, portNames)) {
-                    is LibraryRef.Rom -> insertRomMember(collectionId, ref.id)
-                    is LibraryRef.App -> insertAppMember(collectionId, ref.id)
+                    is LibraryRef.Rom -> { insertRomMember(collectionId, ref.id, memberIndex); memberIndex++ }
+                    is LibraryRef.App -> { insertAppMember(collectionId, ref.id, memberIndex); memberIndex++ }
                     null -> orphan("collection $stem", path)
                 }
             }
@@ -221,14 +222,14 @@ class Importer(
         return byStem
     }
 
-    private fun insertRomMember(collectionId: Long, romId: Long) = conn.execute(
-        "INSERT OR IGNORE INTO collection_members (collection_id, rom_id) VALUES (?, ?)",
-        collectionId, romId,
+    private fun insertRomMember(collectionId: Long, romId: Long, sortOrder: Int) = conn.execute(
+        "INSERT OR IGNORE INTO collection_members (collection_id, rom_id, sort_order) VALUES (?, ?, ?)",
+        collectionId, romId, sortOrder.toLong(),
     )
 
-    private fun insertAppMember(collectionId: Long, appId: Long) = conn.execute(
-        "INSERT OR IGNORE INTO collection_members (collection_id, app_id) VALUES (?, ?)",
-        collectionId, appId,
+    private fun insertAppMember(collectionId: Long, appId: Long, sortOrder: Int) = conn.execute(
+        "INSERT OR IGNORE INTO collection_members (collection_id, app_id, sort_order) VALUES (?, ?, ?)",
+        collectionId, appId, sortOrder.toLong(),
     )
 
     private fun importCollectionParents(collectionIdsByStem: Map<String, Long>) {
