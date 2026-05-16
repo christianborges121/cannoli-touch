@@ -184,84 +184,146 @@ class RomDirectoryWalker(
         }
 
         val romFiles = files.filterNot { isIgnoredExtension(it) }
-        val discCandidates = romFiles.filter { discRegex.containsMatchIn(it.nameWithoutExtension) }
-        if (discCandidates.isEmpty()) return
-        val discGroups = discCandidates.groupBy { discRegex.replace(it.nameWithoutExtension, "").trim() }
         val m3uByBase = romFiles.filter { it.extension.equals("m3u", ignoreCase = true) }
             .associateBy { it.nameWithoutExtension }
 
-        for ((baseName, discs) in discGroups) {
-            if (discs.size <= 1) continue
+        val processed = mutableSetOf<File>()
+        val discCandidates = romFiles.filter { discRegex.containsMatchIn(it.nameWithoutExtension) }
+        val discGroups = discCandidates.groupBy { discRegex.replace(it.nameWithoutExtension, "").trim() }
+        for ((baseName, groupFiles) in discGroups) {
+            val byStem = groupFiles.groupBy { it.nameWithoutExtension }
+            if (byStem.size <= 1) continue
             if (m3uByBase[baseName] != null) continue
-            organizeGroup(dir, baseName, discs.sortedBy { it.name }, files, relPrefix, tag, moves)
+            if (organizeMultiDisc(dir, baseName, byStem, romFiles, relPrefix, tag, moves)) {
+                processed.addAll(groupFiles)
+            }
+        }
+
+        val remainingSiblings = romFiles.filter { it !in processed }
+        val looseCues = remainingSiblings.filter {
+            it.extension.equals("cue", ignoreCase = true) &&
+                !discRegex.containsMatchIn(it.nameWithoutExtension)
+        }
+        for (cue in looseCues) {
+            organizeSingleCue(dir, cue, remainingSiblings, relPrefix, tag, moves)
         }
     }
 
-    private fun organizeGroup(
+    private fun organizeMultiDisc(
         parent: File,
         baseName: String,
-        discs: List<File>,
+        discsByStem: Map<String, List<File>>,
+        siblings: List<File>,
+        relPrefix: String,
+        tag: String,
+        moves: MutableList<RekeyMove>,
+    ): Boolean {
+        val subdir = File(parent, baseName)
+        if (!createSubdir(subdir, tag, baseName)) return false
+
+        val primaries = discsByStem.values.map { pickPrimary(it) }.sortedBy { it.name }
+        val allDiscFiles = discsByStem.values.flatten()
+        val toMove = linkedSetOf<File>().apply {
+            addAll(allDiscFiles)
+            for (file in allDiscFiles) {
+                addAll(stemSiblings(file, siblings))
+                if (file.extension.equals("cue", ignoreCase = true)) {
+                    addAll(parseCueReferencedFiles(file))
+                }
+            }
+        }
+
+        val moved = mutableListOf<Pair<File, File>>()
+        if (!moveAll(toMove, subdir, moved, tag, baseName)) return false
+
+        val m3uFile = File(subdir, "$baseName.m3u")
+        try {
+            m3uFile.writeText(primaries.joinToString("\n") { it.name } + "\n")
+        } catch (e: Throwable) {
+            ScanLog.write("organize $tag: failed to write $baseName.m3u: ${e.message}")
+            rollback(moved, subdir)
+            return false
+        }
+
+        val sortedAll = allDiscFiles.sortedBy { it.name }
+        val firstStem = sortedAll.first().nameWithoutExtension
+        if (firstStem != baseName) migrateSidecarFiles(tag, firstStem, baseName)
+
+        val oldRel = "$relPrefix${sortedAll.first().name}"
+        val newRel = "$relPrefix$baseName${File.separator}${m3uFile.name}"
+        moves.add(RekeyMove(oldRel, newRel))
+        ScanLog.write("organize $tag: bundled $baseName (${primaries.size} discs, ${toMove.size - primaries.size} companions)")
+        return true
+    }
+
+    private fun organizeSingleCue(
+        parent: File,
+        cue: File,
         siblings: List<File>,
         relPrefix: String,
         tag: String,
         moves: MutableList<RekeyMove>,
     ) {
+        val baseName = cue.nameWithoutExtension
         val subdir = File(parent, baseName)
+        if (!createSubdir(subdir, tag, baseName)) return
+
+        val toMove = linkedSetOf<File>().apply {
+            add(cue)
+            addAll(stemSiblings(cue, siblings))
+            addAll(parseCueReferencedFiles(cue))
+        }
+        val moved = mutableListOf<Pair<File, File>>()
+        if (!moveAll(toMove, subdir, moved, tag, baseName)) return
+
+        val oldRel = "$relPrefix${cue.name}"
+        val newRel = "$relPrefix$baseName${File.separator}${cue.name}"
+        moves.add(RekeyMove(oldRel, newRel))
+        ScanLog.write("organize $tag: bundled single-disc $baseName (${toMove.size - 1} companions)")
+    }
+
+    private fun createSubdir(subdir: File, tag: String, baseName: String): Boolean {
         if (subdir.exists()) {
             ScanLog.write("organize $tag: skip $baseName (target subfolder already exists)")
-            return
+            return false
         }
         if (!subdir.mkdir()) {
             ScanLog.write("organize $tag: failed to mkdir $baseName")
-            return
+            return false
         }
+        return true
+    }
 
-        val toMove = linkedSetOf<File>()
-        toMove.addAll(discs)
-        for (disc in discs) {
-            toMove.addAll(stemSiblings(disc, siblings))
-            if (disc.extension.equals("cue", ignoreCase = true)) {
-                toMove.addAll(parseCueReferencedFiles(disc))
-            }
-        }
-
-        val moved = mutableListOf<Pair<File, File>>()
-        var failed = false
+    private fun moveAll(
+        toMove: Collection<File>,
+        subdir: File,
+        moved: MutableList<Pair<File, File>>,
+        tag: String,
+        baseName: String,
+    ): Boolean {
         for (file in toMove) {
             val target = File(subdir, file.name)
             if (file.renameTo(target)) {
                 moved.add(file to target)
             } else {
                 ScanLog.write("organize $tag: failed to move ${file.name} into $baseName/")
-                failed = true
-                break
+                rollback(moved, subdir)
+                return false
             }
         }
-        if (failed) {
-            for ((src, dst) in moved) dst.renameTo(src)
-            subdir.delete()
-            return
-        }
+        return true
+    }
 
-        val m3uFile = File(subdir, "$baseName.m3u")
-        try {
-            m3uFile.writeText(discs.joinToString("\n") { it.name } + "\n")
-        } catch (e: Throwable) {
-            ScanLog.write("organize $tag: failed to write $baseName.m3u: ${e.message}")
-            for ((src, dst) in moved) dst.renameTo(src)
-            subdir.delete()
-            return
-        }
+    private fun rollback(moved: List<Pair<File, File>>, subdir: File) {
+        for ((src, dst) in moved) dst.renameTo(src)
+        subdir.delete()
+    }
 
-        val firstStem = discs.first().nameWithoutExtension
-        if (firstStem != baseName) {
-            migrateSidecarFiles(tag, firstStem, baseName)
-        }
-
-        val oldRel = "$relPrefix${discs.first().name}"
-        val newRel = "$relPrefix$baseName${File.separator}${m3uFile.name}"
-        moves.add(RekeyMove(oldRel, newRel))
-        ScanLog.write("organize $tag: bundled $baseName (${discs.size} discs, ${toMove.size - discs.size} companions)")
+    private fun pickPrimary(files: List<File>): File {
+        return files.minByOrNull { f ->
+            val idx = PRIMARY_DISC_EXTENSIONS.indexOf(f.extension.lowercase())
+            if (idx >= 0) idx else Int.MAX_VALUE
+        } ?: files.first()
     }
 
     private fun stemSiblings(disc: File, siblings: List<File>): List<File> {
@@ -341,5 +403,6 @@ class RomDirectoryWalker(
 
     private companion object {
         const val MAX_DEPTH = 16
+        val PRIMARY_DISC_EXTENSIONS = listOf("cue", "chd", "gdi", "toc", "ccd", "iso", "img", "pbp", "bin")
     }
 }
