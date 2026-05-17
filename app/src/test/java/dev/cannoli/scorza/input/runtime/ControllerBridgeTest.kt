@@ -4,6 +4,7 @@ import dev.cannoli.scorza.input.autoconfig.RetroArchCfgEntry
 import dev.cannoli.scorza.input.repo.MappingRepository
 import dev.cannoli.scorza.input.resolver.MappingResolver
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -70,11 +71,24 @@ class ControllerBridgeTest {
         val bridge = makeBridge(portRouter = portRouter, activeMappingHolder = active)
 
         bridge.settleSyncForTest(listOf(stadiaFacts))
+        portRouter.activate(stadiaFacts.androidDeviceId, 1L)
         bridge.markLaunchTrigger(stadiaFacts.androidDeviceId)
 
         assertEquals(0, portRouter.portFor(stadiaFacts.androidDeviceId))
         assertNotNull(active.active.value)
         assertEquals("Stadia Controller", active.active.value?.match?.name)
+    }
+
+    @Test
+    fun connected_but_not_activated_has_no_port_and_no_active_mapping() {
+        val portRouter = PortRouter()
+        val active = ActiveMappingHolder()
+        val bridge = makeBridge(portRouter = portRouter, activeMappingHolder = active)
+
+        bridge.settleSyncForTest(listOf(stadiaFacts))
+
+        assertNull(portRouter.portFor(stadiaFacts.androidDeviceId))
+        assertNull(active.active.value)
     }
 
     @Test
@@ -102,7 +116,7 @@ class ControllerBridgeTest {
     }
 
     @Test
-    fun built_in_handheld_with_zero_vid_pid_is_accepted_and_marked_builtin() {
+    fun internal_pad_is_tagged_built_in_via_isExternal_false() {
         val portRouter = PortRouter()
         val active = ActiveMappingHolder()
         val bridge = makeBridge(portRouter = portRouter, activeMappingHolder = active)
@@ -113,11 +127,94 @@ class ControllerBridgeTest {
             vendorId = 0,
             productId = 0,
             sourceMask = ControllerBridge.SOURCE_GAMEPAD,
+            isExternal = false,
         )
         bridge.settleSyncForTest(listOf(builtin))
+        portRouter.activate(1001, 1L)
         bridge.markLaunchTrigger(1001)
         assertEquals(0, portRouter.portFor(1001))
         assertNotNull(active.active.value)
+        assertTrue(portRouter.snapshotEntries().single { it.androidDeviceId == 1001 }.device.isBuiltIn)
+    }
+
+    @Test
+    fun internal_pad_with_faked_nonzero_vid_pid_is_still_built_in() {
+        // Retroid handhelds fake VID/PID on the internal pad; the old zero-VID/PID heuristic mis-
+        // tagged this as external. Trust Android's isExternal flag instead.
+        val portRouter = PortRouter()
+        val bridge = makeBridge(portRouter = portRouter)
+        val retroidInternal = ControllerBridge.DeviceFacts(
+            androidDeviceId = 8,
+            descriptor = "retroid-internal",
+            name = "Retroid Pocket Controller",
+            vendorId = 8226,
+            productId = 12289,
+            sourceMask = ControllerBridge.SOURCE_GAMEPAD,
+            isExternal = false,
+        )
+        bridge.settleSyncForTest(listOf(retroidInternal))
+        portRouter.activate(8, 1L)
+        assertTrue(portRouter.snapshotEntries().single { it.androidDeviceId == 8 }.device.isBuiltIn)
+    }
+
+    @Test
+    fun internal_pad_detected_via_buildmodel_name_prefix_when_isexternal_lies() {
+        // Retroid kernel lies about isExternal (reports true for the internal pad). Fall back to
+        // name-vs-Build.MODEL prefix: device name 'Retroid Pocket Controller' matches the brand
+        // 'Retroid' from Build.MODEL='Retroid Pocket Classic', so it's still treated as built-in.
+        val portRouter = PortRouter()
+        val bridge = makeBridge(portRouter = portRouter, buildModel = "Retroid Pocket Classic")
+        val retroidInternal = ControllerBridge.DeviceFacts(
+            androidDeviceId = 8,
+            descriptor = "retroid-internal",
+            name = "Retroid Pocket Controller",
+            vendorId = 8226,
+            productId = 12289,
+            sourceMask = ControllerBridge.SOURCE_GAMEPAD,
+            isExternal = true,
+        )
+        bridge.settleSyncForTest(listOf(retroidInternal))
+        portRouter.activate(8, 1L)
+        assertTrue(portRouter.snapshotEntries().single { it.androidDeviceId == 8 }.device.isBuiltIn)
+    }
+
+    @Test
+    fun external_pad_on_same_handheld_is_not_built_in_via_name_heuristic() {
+        // The Pro pad on a Retroid still reads as external because its name does not start with
+        // the Build.MODEL brand prefix.
+        val portRouter = PortRouter()
+        val bridge = makeBridge(portRouter = portRouter, buildModel = "Retroid Pocket Classic")
+        val proPad = ControllerBridge.DeviceFacts(
+            androidDeviceId = 16,
+            descriptor = "pro-pad",
+            name = "Nintendo Switch Pro Controller",
+            vendorId = 8226,
+            productId = 12289,
+            sourceMask = ControllerBridge.SOURCE_GAMEPAD,
+            isExternal = true,
+        )
+        bridge.settleSyncForTest(listOf(proPad))
+        portRouter.activate(16, 1L)
+        assertFalse(portRouter.snapshotEntries().single { it.androidDeviceId == 16 }.device.isBuiltIn)
+    }
+
+    @Test
+    fun external_pad_with_zero_vid_pid_is_not_built_in() {
+        // Inverse: some quirky externals report 0/0; trust isExternal=true over the old heuristic.
+        val portRouter = PortRouter()
+        val bridge = makeBridge(portRouter = portRouter)
+        val external = ControllerBridge.DeviceFacts(
+            androidDeviceId = 9,
+            descriptor = "ext",
+            name = "Weird USB Pad",
+            vendorId = 0,
+            productId = 0,
+            sourceMask = ControllerBridge.SOURCE_GAMEPAD,
+            isExternal = true,
+        )
+        bridge.settleSyncForTest(listOf(external))
+        portRouter.activate(9, 1L)
+        assertFalse(portRouter.snapshotEntries().single { it.androidDeviceId == 9 }.device.isBuiltIn)
     }
 
     @Test
@@ -142,6 +239,7 @@ class ControllerBridgeTest {
         val bridge = makeBridge(portRouter = portRouter)
 
         bridge.settleSyncForTest(listOf(stadiaFacts))
+        portRouter.activate(stadiaFacts.androidDeviceId, 1L)
         bridge.markLaunchTrigger(stadiaFacts.androidDeviceId)
         assertEquals(0, portRouter.portFor(stadiaFacts.androidDeviceId))
 
@@ -156,6 +254,7 @@ class ControllerBridgeTest {
 
         bridge.settleSyncForTest(listOf(stadiaFacts))
         bridge.settleSyncForTest(listOf(stadiaFacts))
+        portRouter.activate(stadiaFacts.androidDeviceId, 1L)
         bridge.markLaunchTrigger(stadiaFacts.androidDeviceId)
 
         assertEquals(0, portRouter.portFor(stadiaFacts.androidDeviceId))
@@ -175,8 +274,10 @@ class ControllerBridgeTest {
         // Non-adjacent device IDs ensure SiblingFolder treats them as separate clusters.
         val second = stadiaFacts.copy(androidDeviceId = 12, descriptor = "stadia-2")
         bridge.settleSyncForTest(listOf(stadiaFacts))
+        portRouter.activate(7, 1_000L)
         ticks = 2_000L
         bridge.settleSyncForTest(listOf(stadiaFacts, second))
+        portRouter.activate(12, 2_000L)
 
         bridge.markLaunchTrigger(7)
         assertEquals(0, portRouter.portFor(7))
@@ -184,22 +285,52 @@ class ControllerBridgeTest {
     }
 
     @Test
-    fun device_added_and_removed_callbacks_fire_only_after_initial_enumeration() {
+    fun device_added_callback_fires_on_activation_not_enumeration() {
         val added = mutableListOf<Int>()
         val removed = mutableListOf<Int>()
-        val bridge = makeBridge()
+        val portRouter = PortRouter()
+        val bridge = makeBridge(portRouter = portRouter)
         bridge.onDeviceAdded = { d -> added.add(d.androidDeviceId) }
         bridge.onDeviceRemoved = { departed -> removed.add(departed.androidDeviceId) }
 
+        // Enumeration alone never fires onDeviceAdded; the device is still pending.
         bridge.settleSyncForTest(listOf(stadiaFacts))
         assertTrue(added.isEmpty())
 
+        // A hot-plugged pad is also silent until it produces input.
         val second = stadiaFacts.copy(androidDeviceId = 12, descriptor = "stadia-2")
         bridge.settleSyncForTest(listOf(stadiaFacts, second))
-        assertEquals(listOf(12), added)
+        assertTrue(added.isEmpty())
 
+        // Activating either pad fires the callback in activation order.
+        portRouter.activate(12, 2_000L)
+        portRouter.activate(stadiaFacts.androidDeviceId, 3_000L)
+        assertEquals(listOf(12, stadiaFacts.androidDeviceId), added)
+
+        // Removing an activated device still fires onDeviceRemoved.
         bridge.settleSyncForTest(listOf(stadiaFacts))
         assertEquals(listOf(12), removed)
+    }
+
+    @Test
+    fun pending_device_disconnect_does_not_persist_mapping() {
+        val resolver = makeResolver()
+        val portRouter = PortRouter()
+        val repo = MappingRepository(tempFolder.root)
+        val bridge = ControllerBridge(
+            resolver = resolver,
+            portRouter = portRouter,
+            activeMappingHolder = ActiveMappingHolder(),
+            mappingRepository = repo,
+            clock = { 1_000L },
+            buildModel = "Pixel",
+        )
+
+        bridge.settleSyncForTest(listOf(stadiaFacts))
+        bridge.settleSyncForTest(emptyList())
+
+        // Nothing was activated, so nothing should have been written.
+        assertTrue(repo.list().isEmpty())
     }
 
     @Test
@@ -237,6 +368,7 @@ class ControllerBridgeTest {
         )
 
         bridge.settleSyncForTest(listOf(motion, touchpad, gamepad))
+        portRouter.activate(12, 1_000L)
         bridge.markLaunchTrigger(12)
 
         // Only the gamepad endpoint gets a port; the siblings alias onto it.
@@ -270,6 +402,8 @@ class ControllerBridgeTest {
         )
 
         bridge.settleSyncForTest(padA + padB)
+        portRouter.activate(12, 1_000L)
+        portRouter.activate(15, 2_000L)
         bridge.markLaunchTrigger(12)
 
         assertEquals(0, portRouter.portFor(12))

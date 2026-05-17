@@ -38,6 +38,11 @@ class ControllerBridge(
     private var listener: InputManager.InputDeviceListener? = null
     private var initialEnumerationDone = false
     private var appContext: Context? = null
+    private val pendingSavesById = mutableMapOf<Int, dev.cannoli.scorza.input.DeviceMapping>()
+
+    init {
+        portRouter.onActivatedListener = { device -> handleActivation(device) }
+    }
 
     private val settleHandler: Handler by lazy { Handler(Looper.getMainLooper()) }
     private val settleRunnable = Runnable {
@@ -89,10 +94,24 @@ class ControllerBridge(
         settleHandler.removeCallbacks(settleRunnable)
         val inputManager = context.getSystemService(Context.INPUT_SERVICE) as InputManager
         inputManager.unregisterInputDeviceListener(l)
+        pendingSavesById.clear()
         initialEnumerationDone = false
         listener = null
         appContext = null
     }
+
+    private fun handleActivation(device: ConnectedDevice) {
+        val id = device.androidDeviceId
+        pendingSavesById.remove(id)?.let { mappingRepository?.save(it) }
+        portRouter.mappingFor(id)?.let { activeMappingHolder.set(it) }
+        // Activation is always a deliberate user press, so fire onDeviceAdded regardless of
+        // whether the device was present during the initial enumeration burst. Suppression for
+        // built-in devices is handled by the OSD layer, not here.
+        onDeviceAdded?.invoke(device)
+    }
+
+    @VisibleForTesting
+    fun handleActivationForTest(device: ConnectedDevice) = handleActivation(device)
 
     fun markLaunchTrigger(androidDeviceId: Int) {
         portRouter.markLaunchTrigger(androidDeviceId)
@@ -173,7 +192,11 @@ class ControllerBridge(
         val clusterDescriptors = mutableMapOf<Int, String>()
         for (cluster in clusters) {
             val gamepadFacts = factsById[cluster.gamepad.androidDeviceId] ?: continue
-            val zeroVidPid = gamepadFacts.vendorId == 0 && gamepadFacts.productId == 0
+            // Retroid (and likely other handhelds) lie via InputDevice.isExternal and report
+            // their internal pad as external. Fall back to a name-vs-Build.MODEL prefix check:
+            // an internal pad almost always reports a name that starts with the handheld brand
+            // (e.g. Build.MODEL='Retroid Pocket Classic' + name='Retroid Pocket Controller').
+            val nameLooksInternal = nameMatchesBuildModelBrand(gamepadFacts.name, buildModel)
             val connected = ConnectedDeviceFactory.fromFields(
                 androidDeviceId = gamepadFacts.androidDeviceId,
                 descriptor = gamepadFacts.descriptor,
@@ -183,7 +206,7 @@ class ControllerBridge(
                 androidBuildModel = buildModel,
                 sourceMask = gamepadFacts.sourceMask,
                 connectedAtMillis = clock(),
-                isBuiltIn = zeroVidPid,
+                isBuiltIn = !gamepadFacts.isExternal || nameLooksInternal,
                 isExternal = gamepadFacts.isExternal,
             )
             targetEntries[connected.androidDeviceId] = connected
@@ -210,6 +233,7 @@ class ControllerBridge(
                 ?: "Controller"
             val port = snap?.port
             dev.cannoli.scorza.util.InputLog.write("  removed id=$id name='$displayName' port=${port?.let { "P${it + 1}" } ?: "-"}")
+            pendingSavesById.remove(id)
             portRouter.onDisconnect(id)
             if (initialEnumerationDone) {
                 onDeviceRemoved?.invoke(DepartedDevice(id, displayName, port))
@@ -221,19 +245,16 @@ class ControllerBridge(
             val persistenceDescriptor = clusterDescriptors[id]
             val resolved = resolver.resolve(connected, persistenceDescriptor)
             val hintApplied = applyHintFromOriginalIdentity(resolved.mapping, connected)
-            // Persist when our auto-applied logic changed something so the change sticks across
-            // restarts. Never write back over a userEdited mapping — the user curated it.
+            // Park the save until the device actually proves itself by producing input. Never write
+            // back over a userEdited mapping. Phantom stubs that never fire never get persisted.
             val hintChanged = hintApplied !== resolved.mapping
             if (!hintApplied.userEdited && hintChanged) {
-                mappingRepository?.save(hintApplied)
+                pendingSavesById[connected.androidDeviceId] = hintApplied
             }
             portRouter.onConnect(connected, hintApplied)
-            activeMappingHolder.set(hintApplied)
-            val port = portRouter.portFor(connected.androidDeviceId)
             dev.cannoli.scorza.util.InputLog.write(
-                "  enrolled id=${connected.androidDeviceId} mapping=${hintApplied.id} persistent=${resolved.persistent} glyph=${hintApplied.glyphStyle} desc='${persistenceDescriptor ?: "-"}' port=${port?.let { "P${it + 1}" } ?: "-"}"
+                "  enrolled id=${connected.androidDeviceId} mapping=${hintApplied.id} persistent=${resolved.persistent} glyph=${hintApplied.glyphStyle} desc='${persistenceDescriptor ?: "-"}' pending"
             )
-            if (initialEnumerationDone) onDeviceAdded?.invoke(connected)
         }
 
         val currentAliases = portRouter.aliasesSnapshot()
@@ -307,6 +328,14 @@ class ControllerBridge(
             return hint to (vid to pid)
         }
         return null
+    }
+
+    private fun nameMatchesBuildModelBrand(deviceName: String?, buildModel: String): Boolean {
+        if (deviceName.isNullOrEmpty() || buildModel.isEmpty()) return false
+        val brand = buildModel.substringBefore(' ').trim()
+        if (brand.length < 3) return false
+        return deviceName.startsWith("$brand ", ignoreCase = true) ||
+            deviceName.equals(brand, ignoreCase = true)
     }
 
     private fun isGamepad(facts: DeviceFacts): Boolean {
