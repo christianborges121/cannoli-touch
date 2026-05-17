@@ -312,11 +312,13 @@ class MainActivity : ComponentActivity(), ActivityActions {
 
     private fun registerControllerOsd() {
         controllerBridge.onDeviceAdded = { device ->
-            val port = portRouter.portFor(device.androidDeviceId)
-            if (port != null) {
-                val name = portRouter.mappingForPort(port)?.displayName?.takeIf { it.isNotEmpty() }
-                    ?: device.name.ifEmpty { "Controller" }
-                osdController.show("P${port + 1}: $name")
+            if (!device.isBuiltIn) {
+                val port = portRouter.portFor(device.androidDeviceId)
+                if (port != null) {
+                    val name = portRouter.mappingForPort(port)?.displayName?.takeIf { it.isNotEmpty() }
+                        ?: device.name.ifEmpty { "Controller" }
+                    osdController.show("P${port + 1}: $name")
+                }
             }
         }
         controllerBridge.onDeviceRemoved = { departed ->

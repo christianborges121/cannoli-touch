@@ -2550,10 +2550,12 @@ class LibretroActivity : ComponentActivity() {
         if (::controllerBridge.isInitialized) {
             controllerBridge.onDeviceAdded = { device ->
                 val port = portRouter.portFor(device.androidDeviceId)
-                val portLabel = port?.let { "P${it + 1}" } ?: "-"
-                val name = port?.let { portRouter.mappingForPort(it)?.displayName?.takeIf { n -> n.isNotEmpty() } }
-                    ?: device.name.ifEmpty { "Controller" }
-                showOsd("$name connected to $portLabel")
+                if (!device.isBuiltIn) {
+                    val portLabel = port?.let { "P${it + 1}" } ?: "-"
+                    val name = port?.let { portRouter.mappingForPort(it)?.displayName?.takeIf { n -> n.isNotEmpty() } }
+                        ?: device.name.ifEmpty { "Controller" }
+                    showOsd("$name connected to $portLabel")
+                }
                 if (port != null && ::runner.isInitialized) {
                     val typeId = portDeviceTypes[port] ?: LibretroRunner.DEVICE_JOYPAD
                     runner.setControllerPortDevice(port, typeId)
