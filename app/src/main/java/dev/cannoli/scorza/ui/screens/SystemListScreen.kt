@@ -66,7 +66,7 @@ fun SystemListScreen(
     listLineHeight: TextUnit = 32.sp,
     listVerticalPadding: Dp = 8.dp,
     dialogState: DialogState = DialogState.None,
-    onVisibleRangeChanged: (Int, Int, Boolean) -> Unit = { _, _, _ -> },
+    onListStateChanged: ((androidx.compose.foundation.lazy.LazyListState?) -> Unit)? = null,
     kitchenRunning: Boolean = false,
     title: String = "",
     mainMenuQuit: Boolean = false,
@@ -83,6 +83,10 @@ fun SystemListScreen(
 
     DisposableEffect(Unit) {
         onDispose { viewModel.savePosition(listState.firstVisibleItemIndex) }
+    }
+    androidx.compose.runtime.LaunchedEffect(listState) {
+        androidx.compose.runtime.snapshotFlow { listState.firstVisibleItemIndex }
+            .collect { viewModel.firstVisibleIndex = it }
     }
 
     val recentlyPlayedLabel = stringResource(R.string.label_recently_played)
@@ -177,10 +181,7 @@ fun SystemListScreen(
                     scrollTarget = state.scrollTarget,
                     listState = listState,
                     reorderMode = state.reorderMode,
-                    onVisibleRangeChanged = { first, count, full ->
-                        viewModel.firstVisibleIndex = first
-                        onVisibleRangeChanged(first, count, full)
-                    },
+                    onListStateChanged = onListStateChanged,
                     key = if (state.reorderMode) null else { _, item ->
                         when (item) {
                             is ListItem.RecentlyPlayedItem -> "recently_played"

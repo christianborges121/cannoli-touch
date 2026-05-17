@@ -11,6 +11,7 @@ import dev.cannoli.scorza.di.IoScope
 import dev.cannoli.scorza.input.ActivityActions
 import dev.cannoli.scorza.input.InputTesterController
 import dev.cannoli.scorza.input.LauncherActions
+import dev.cannoli.scorza.input.PageJump
 import dev.cannoli.scorza.input.ScreenInputHandler
 import dev.cannoli.scorza.launcher.ApkLauncher
 import dev.cannoli.scorza.launcher.InstalledCoreService
@@ -207,36 +208,8 @@ class SettingsInputHandler @Inject constructor(
 
     private fun pageJump(direction: Int) {
         val state = settingsViewModel.state.value
-        val itemCount = state.categories.size
-        if (itemCount == 0) return
-        val lastIndex = itemCount - 1
-        val page = nav.currentPageSize.coerceAtLeast(1)
-
-        val newIdx: Int
-        val newScroll: Int
-
-        if (direction > 0) {
-            val lastVisible = nav.currentFirstVisible + page - 1
-            if (lastVisible >= lastIndex) {
-                if (state.categoryIndex >= lastIndex) return
-                newIdx = lastIndex
-                newScroll = nav.currentFirstVisible
-            } else {
-                newIdx = (nav.currentFirstVisible + page).coerceAtMost(lastIndex)
-                newScroll = newIdx
-            }
-        } else {
-            if (nav.currentFirstVisible <= 0) {
-                if (state.categoryIndex <= 0) return
-                newIdx = 0
-                newScroll = 0
-            } else {
-                newIdx = (nav.currentFirstVisible - page).coerceAtLeast(0)
-                newScroll = newIdx
-            }
-        }
-
-        settingsViewModel.setCategoryIndex(newIdx)
+        val newIdx = PageJump.compute(direction, state.categories.size, state.categoryIndex, nav.activeListState)
+        if (newIdx != state.categoryIndex) settingsViewModel.setCategoryIndex(newIdx)
     }
 
     private fun pushDirectoryBrowser(purpose: BrowsePurpose, startPath: String) {

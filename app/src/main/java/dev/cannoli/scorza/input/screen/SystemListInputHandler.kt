@@ -5,6 +5,7 @@ import dev.cannoli.scorza.config.PlatformConfig
 import dev.cannoli.scorza.db.CollectionsRepository
 import dev.cannoli.scorza.di.IoScope
 import dev.cannoli.scorza.input.LauncherActions
+import dev.cannoli.scorza.input.PageJump
 import dev.cannoli.scorza.input.ScreenInputHandler
 import dev.cannoli.scorza.model.ListItem
 import dev.cannoli.scorza.navigation.LauncherScreen
@@ -139,36 +140,8 @@ class SystemListInputHandler @Inject constructor(
 
     private fun pageJump(direction: Int) {
         val state = systemListViewModel.state.value
-        val itemCount = state.items.size
-        if (itemCount == 0) return
-        val lastIndex = itemCount - 1
-        val page = nav.currentPageSize.coerceAtLeast(1)
-
-        val newIdx: Int
-        val newScroll: Int
-
-        if (direction > 0) {
-            val lastVisible = nav.currentFirstVisible + page - 1
-            if (lastVisible >= lastIndex) {
-                if (state.selectedIndex >= lastIndex) return
-                newIdx = lastIndex
-                newScroll = nav.currentFirstVisible
-            } else {
-                newIdx = (nav.currentFirstVisible + page).coerceAtMost(lastIndex)
-                newScroll = newIdx
-            }
-        } else {
-            if (nav.currentFirstVisible <= 0) {
-                if (state.selectedIndex <= 0) return
-                newIdx = 0
-                newScroll = 0
-            } else {
-                newIdx = (nav.currentFirstVisible - page).coerceAtLeast(0)
-                newScroll = newIdx
-            }
-        }
-
-        systemListViewModel.jumpToIndex(newIdx, newScroll)
+        val newIdx = PageJump.compute(direction, state.items.size, state.selectedIndex, nav.activeListState)
+        if (newIdx != state.selectedIndex) systemListViewModel.setSelectedIndex(newIdx)
     }
 
     private fun onSystemListConfirm() {

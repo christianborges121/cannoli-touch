@@ -25,7 +25,7 @@ fun DirectoryBrowserScreen(
     isSelectRow: Boolean,
     showSelectOption: Boolean = true,
     showNewFolder: Boolean = true,
-    onVisibleRangeChanged: (Int, Int, Boolean) -> Unit,
+    onListStateChanged: ((androidx.compose.foundation.lazy.LazyListState?) -> Unit)?,
     buttonStyle: ButtonStyle
 ) {
     val displayItems = if (showSelectOption) listOf(stringResource(R.string.label_use_location)) + entries else entries
@@ -59,7 +59,7 @@ fun DirectoryBrowserScreen(
             selectedIndex = selectedIndex,
             itemHeight = itemHeight,
             scrollTarget = scrollTarget,
-            onVisibleRangeChanged = onVisibleRangeChanged
+            onListStateChanged = onListStateChanged
         ) { _, item, isSelected ->
             PillRowText(
                 label = item,

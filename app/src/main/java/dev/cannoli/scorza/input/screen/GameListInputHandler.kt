@@ -11,6 +11,7 @@ import dev.cannoli.scorza.model.recentKey
 import dev.cannoli.scorza.navigation.NavigationController
 import dev.cannoli.scorza.settings.ContentMode
 import dev.cannoli.scorza.settings.SettingsRepository
+import dev.cannoli.scorza.input.PageJump
 import dev.cannoli.scorza.ui.screens.DialogState
 import dev.cannoli.scorza.ui.viewmodel.GameListViewModel
 import dev.cannoli.scorza.ui.viewmodel.SystemListViewModel
@@ -356,36 +357,8 @@ class GameListInputHandler @Inject constructor(
 
     private fun pageJump(direction: Int) {
         val state = gameListViewModel.state.value
-        val itemCount = state.items.size
-        if (itemCount == 0) return
-        val lastIndex = itemCount - 1
-        val page = nav.currentPageSize.coerceAtLeast(1)
-
-        val newIdx: Int
-        val newScroll: Int
-
-        if (direction > 0) {
-            val lastVisible = nav.currentFirstVisible + page - 1
-            if (lastVisible >= lastIndex) {
-                if (state.selectedIndex >= lastIndex) return
-                newIdx = lastIndex
-                newScroll = nav.currentFirstVisible
-            } else {
-                newIdx = (nav.currentFirstVisible + page).coerceAtMost(lastIndex)
-                newScroll = newIdx
-            }
-        } else {
-            if (nav.currentFirstVisible <= 0) {
-                if (state.selectedIndex <= 0) return
-                newIdx = 0
-                newScroll = 0
-            } else {
-                newIdx = (nav.currentFirstVisible - page).coerceAtLeast(0)
-                newScroll = newIdx
-            }
-        }
-
-        gameListViewModel.jumpToIndex(newIdx, newScroll)
+        val newIdx = PageJump.compute(direction, state.items.size, state.selectedIndex, nav.activeListState)
+        if (newIdx != state.selectedIndex) gameListViewModel.setSelectedIndex(newIdx)
     }
 
     private fun selectedRecentKey(item: ListItem): String? = when (item) {

@@ -3,6 +3,7 @@ package dev.cannoli.scorza.input.screen
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
+import dev.cannoli.scorza.input.PageJump
 import dev.cannoli.scorza.input.ScreenInputHandler
 import dev.cannoli.scorza.navigation.NavigationController
 
@@ -42,21 +43,13 @@ class ScrollListInputHandler @AssistedInject constructor(
     override fun onDown() = onMove(wrap(1))
 
     override fun onLeft() {
-        val page = nav.currentPageSize.coerceAtLeast(1)
-        val count = itemCount()
-        if (count == 0) return
-        val newIdx = (selectedIndex() - page).coerceAtLeast(0)
-        onMove(newIdx)
-        nav.currentFirstVisible = newIdx
+        val newIdx = PageJump.compute(-1, itemCount(), selectedIndex(), nav.activeListState)
+        if (newIdx != selectedIndex()) onMove(newIdx)
     }
 
     override fun onRight() {
-        val page = nav.currentPageSize.coerceAtLeast(1)
-        val count = itemCount()
-        if (count == 0) return
-        val newIdx = (selectedIndex() + page).coerceAtMost(count - 1)
-        onMove(newIdx)
-        nav.currentFirstVisible = newIdx
+        val newIdx = PageJump.compute(1, itemCount(), selectedIndex(), nav.activeListState)
+        if (newIdx != selectedIndex()) onMove(newIdx)
     }
 
     override fun onConfirm() = onConfirm.invoke()

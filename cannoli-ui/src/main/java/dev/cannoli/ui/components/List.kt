@@ -6,6 +6,7 @@ import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.unit.Dp
@@ -20,11 +21,18 @@ fun <T> List(
     scrollTarget: Int = 0,
     listState: LazyListState = rememberLazyListState(initialFirstVisibleItemIndex = scrollTarget.coerceAtLeast(0)),
     reorderMode: Boolean = false,
-    onVisibleRangeChanged: ((firstVisible: Int, visibleCount: Int, isViewportFull: Boolean) -> Unit)? = null,
+    onListStateChanged: ((LazyListState?) -> Unit)? = null,
     key: ((index: Int, item: T) -> Any)? = null,
     itemContent: @Composable (index: Int, item: T, isSelected: Boolean) -> Unit
 ) {
-    ListScrollEffect(listState, selectedIndex, items.size, scrollTarget, reorderMode, onVisibleRangeChanged)
+    ListScrollEffect(listState, selectedIndex, items.size, scrollTarget, reorderMode)
+
+    if (onListStateChanged != null) {
+        DisposableEffect(listState) {
+            onListStateChanged(listState)
+            onDispose { onListStateChanged(null) }
+        }
+    }
 
     val listModifier = if (itemHeight != Dp.Unspecified) {
         modifier.layout { measurable, constraints ->

@@ -1,5 +1,6 @@
 package dev.cannoli.scorza.navigation
 
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
@@ -17,8 +18,7 @@ class NavigationController @Inject constructor() {
 
     var resumableGames by mutableStateOf(emptySet<String>())
     var navigating = false
-    var currentFirstVisible = 0
-    var currentPageSize = 10
+    var activeListState: LazyListState? = null
     var pendingRecentlyPlayedReorder = false
     var lastKeyRepeatCount: Int = 0
 

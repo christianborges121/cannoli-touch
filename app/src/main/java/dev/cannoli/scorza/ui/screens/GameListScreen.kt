@@ -93,7 +93,7 @@ fun GameListScreen(
     listLineHeight: TextUnit = 32.sp,
     listVerticalPadding: Dp = 8.dp,
     dialogState: DialogState = DialogState.None,
-    onVisibleRangeChanged: (Int, Int, Boolean) -> Unit = { _, _, _ -> },
+    onListStateChanged: ((androidx.compose.foundation.lazy.LazyListState?) -> Unit)? = null,
     resumableGames: Set<String> = emptySet(),
     swapPlayResume: Boolean = false,
     artWidth: Int = 40,
@@ -106,6 +106,10 @@ fun GameListScreen(
 
     DisposableEffect(Unit) {
         onDispose { viewModel.savePosition(listState.firstVisibleItemIndex) }
+    }
+    androidx.compose.runtime.LaunchedEffect(listState) {
+        androidx.compose.runtime.snapshotFlow { listState.firstVisibleItemIndex }
+            .collect { viewModel.firstVisibleIndex = it }
     }
 
     val selected = state.items.getOrNull(state.selectedIndex)
@@ -210,10 +214,7 @@ fun GameListScreen(
                                 scrollTarget = state.scrollTarget,
                                 listState = listState,
                                 reorderMode = state.reorderMode,
-                                onVisibleRangeChanged = { first, count, full ->
-                                    viewModel.firstVisibleIndex = first
-                                    onVisibleRangeChanged(first, count, full)
-                                },
+                                onListStateChanged = onListStateChanged,
                                 key = if (state.reorderMode) null else { _, item -> item.itemKey }
                             ) { index, item, isSelected ->
                                 val starred = showFavoriteStars && when (item) {

@@ -344,8 +344,8 @@ class GameListViewModel @Inject constructor(
         }
     }
 
-    fun jumpToIndex(index: Int, scrollTarget: Int) {
-        _state.update { it.copy(selectedIndex = index, scrollTarget = scrollTarget) }
+    fun setSelectedIndex(index: Int) {
+        _state.update { it.copy(selectedIndex = index) }
     }
 
     fun getSelectedItem(): ListItem? {

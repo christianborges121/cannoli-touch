@@ -61,7 +61,7 @@ fun CreditsOverlay(
     listFontSize: TextUnit,
     listLineHeight: TextUnit,
     listVerticalPadding: Dp,
-    onVisibleRangeChanged: ((Int, Int, Boolean) -> Unit)? = null
+    onListStateChanged: ((androidx.compose.foundation.lazy.LazyListState?) -> Unit)? = null
 ) {
     val itemHeight = pillItemHeight(listLineHeight, listVerticalPadding)
     ListDialogScreen(
@@ -78,7 +78,7 @@ fun CreditsOverlay(
             selectedIndex = selectedIndex,
             scrollTarget = scrollTarget,
             itemHeight = itemHeight,
-            onVisibleRangeChanged = onVisibleRangeChanged
+            onListStateChanged = onListStateChanged
         ) { _, entry, isSelected ->
             PillRowKeyValue(
                 label = entry.name,

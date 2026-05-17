@@ -269,10 +269,7 @@ class MainActivity : ComponentActivity(), ActivityActions {
             settingsViewModel = svm,
             controllersViewModel = cvm,
             dialogState = navDialogState,
-            onVisibleRangeChanged = { first, count, full ->
-                nav.currentFirstVisible = first
-                if (full) nav.currentPageSize = count
-            },
+            onListStateChanged = { listState -> nav.activeListState = listState },
             resumableGames = navResumableGames,
             updateAvailable = updateInfo != null,
             downloadProgress = dlProgress ?: 0f,

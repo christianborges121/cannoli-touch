@@ -3,8 +3,6 @@ package dev.cannoli.ui.components
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.snapshotFlow
-import kotlinx.coroutines.flow.distinctUntilChanged
 
 @Composable
 fun ListScrollEffect(
@@ -13,30 +11,12 @@ fun ListScrollEffect(
     itemCount: Int,
     scrollTarget: Int = -1,
     reorderMode: Boolean = false,
-    onVisibleRangeChanged: ((firstVisible: Int, visibleCount: Int, isViewportFull: Boolean) -> Unit)? = null
 ) {
     LaunchedEffect(itemCount, scrollTarget) {
         if (itemCount > 0 && scrollTarget >= 0) {
             val target = scrollTarget.coerceIn(0, itemCount - 1)
             if (listState.firstVisibleItemIndex != target) {
                 listState.scrollToItem(target)
-            }
-        }
-    }
-
-    if (onVisibleRangeChanged != null) {
-        LaunchedEffect(listState) {
-            snapshotFlow {
-                val fullyVisible = listState.layoutInfo.visibleItemsInfo.filter { info ->
-                    info.offset >= 0 &&
-                        info.offset + info.size <= listState.layoutInfo.viewportEndOffset
-                }
-                val first = fullyVisible.firstOrNull()?.index ?: 0
-                val last = fullyVisible.lastOrNull()?.index ?: 0
-                val count = fullyVisible.size
-                Triple(first, count, last < itemCount - 1)
-            }.distinctUntilChanged().collect { (first, count, full) ->
-                if (count > 0) onVisibleRangeChanged(first, count, full)
             }
         }
     }

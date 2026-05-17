@@ -44,7 +44,7 @@ fun SettingsScreen(
     downloadProgress: Float = 0f,
     downloadError: String? = null,
     updateAvailable: Boolean = false,
-    onVisibleRangeChanged: (Int, Int, Boolean) -> Unit = { _, _, _ -> },
+    onListStateChanged: ((androidx.compose.foundation.lazy.LazyListState?) -> Unit)? = null,
     buttonStyle: ButtonStyle = ButtonStyle(),
 ) {
     val state by viewModel.state.collectAsState()
@@ -75,7 +75,7 @@ fun SettingsScreen(
                     items = state.items,
                     selectedIndex = state.selectedIndex,
                     itemHeight = itemHeight,
-                    onVisibleRangeChanged = onVisibleRangeChanged,
+                    onListStateChanged = onListStateChanged,
                     key = { _, item -> item.key }
                 ) { _, item, isSelected ->
                     val hasValue = item.valueText != null || item.valueRes != null || item.swatchColor != null
@@ -149,7 +149,7 @@ fun SettingsScreen(
                     items = state.categories,
                     selectedIndex = state.categoryIndex,
                     itemHeight = itemHeight,
-                    onVisibleRangeChanged = onVisibleRangeChanged,
+                    onListStateChanged = onListStateChanged,
                     key = { _, category -> category.key }
                 ) { _, category, isSelected ->
                     PillRowText(
