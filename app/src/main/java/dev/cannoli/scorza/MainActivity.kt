@@ -164,7 +164,6 @@ class MainActivity : ComponentActivity(), ActivityActions {
             }
         }
         router.unregisterCoreQueryReceiver = { unregisterCoreQueryReceiver() }
-        router.wire(inputDispatcher)
 
         controllerBlacklist.load(this)
         controllerBridge.start(this)
@@ -334,6 +333,10 @@ class MainActivity : ComponentActivity(), ActivityActions {
     @Suppress("DEPRECATION")
     override fun onResume() {
         super.onResume()
+        // Re-wire the dispatcher to launcher dispatch shape on each resume. LibretroActivity
+        // overwrites these callbacks with IGM-specific wiring when it runs; we restore the
+        // launcher's wiring when we come back.
+        router.wire(inputDispatcher)
         registerControllerOsd()
         menuNavigationPoller.start()
         bootSequencer.advance()

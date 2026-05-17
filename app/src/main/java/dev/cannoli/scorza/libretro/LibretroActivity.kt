@@ -789,9 +789,20 @@ class LibretroActivity : ComponentActivity() {
     private val menuRepeatRunnable = object : Runnable {
         override fun run() {
             if (menuHeldKey != 0 && screenStack.isNotEmpty()) {
-                onKeyDown(menuHeldKey, KeyEvent(KeyEvent.ACTION_DOWN, menuHeldKey))
+                fireMenuNavForKey(menuHeldKey)
                 menuRepeatHandler.postDelayed(this, menuRepeatInterval)
             }
+        }
+    }
+
+    private fun fireMenuNavForKey(keyCode: Int) {
+        // Bypass keycode synthesis (deviceId would be virtual and the dispatcher would skip it).
+        // Calling the wired callback directly routes through registry top or legacyNavigate.
+        when (keyCode) {
+            KeyEvent.KEYCODE_DPAD_UP -> inputDispatcher.onUp()
+            KeyEvent.KEYCODE_DPAD_DOWN -> inputDispatcher.onDown()
+            KeyEvent.KEYCODE_DPAD_LEFT -> inputDispatcher.onLeft()
+            KeyEvent.KEYCODE_DPAD_RIGHT -> inputDispatcher.onRight()
         }
     }
 
@@ -811,7 +822,7 @@ class LibretroActivity : ComponentActivity() {
             menuRepeatHandler.removeCallbacks(menuRepeatRunnable)
             menuHeldKey = key
             if (key != 0) {
-                onKeyDown(key, KeyEvent(KeyEvent.ACTION_DOWN, key))
+                fireMenuNavForKey(key)
                 if (currentScreen !is IGMScreen.Guide) {
                     menuRepeatHandler.postDelayed(menuRepeatRunnable, menuRepeatDelay)
                 }
@@ -989,32 +1000,20 @@ class LibretroActivity : ComponentActivity() {
         if (loading) return true
         if (isSystemMediaKey(keyCode)) return super.onKeyDown(keyCode, event)
         val screen = currentScreen ?: return handleGameplayInput(keyCode, event)
-        val button = resolveNavButton(keyCode, event.deviceId)
-        return when (screen) {
-            is IGMScreen.Menu -> handleMenuInput(screen, button)
-            is IGMScreen.Settings -> handleCategoryInput(screen, button)
-            is IGMScreen.Video -> handleVideoInput(screen, button)
-            is IGMScreen.Advanced -> handleAdvancedInput(screen, button)
-            is IGMScreen.ShaderSettings -> handleShaderSettingsInput(screen, button)
-            is IGMScreen.Emulator -> handleEmulatorInput(screen, button)
-            is IGMScreen.EmulatorCategory -> handleEmulatorCategoryInput(screen, button)
-            is IGMScreen.Shortcuts -> handleShortcutsInput(screen, keyCode, button)
-            is IGMScreen.SavePrompt -> handleSavePromptInput(screen, button)
-            is IGMScreen.Info -> {
-                when (button) {
-                    "btn_east", "btn_south" -> { infoScrollDir = 0; pop(); true }
-                    "btn_up" -> { infoScrollDir = -1; true }
-                    "btn_down" -> { infoScrollDir = 1; true }
-                    else -> true
-                }
-            }
-            is IGMScreen.Achievements -> handleAchievementsInput(screen, button)
-            is IGMScreen.AchievementDetail -> handleAchievementDetailInput(screen, button)
-            is IGMScreen.GuidePicker -> handleGuidePickerInput(screen, button)
-            is IGMScreen.Guide -> handleGuideInput(screen, button)
-            is IGMScreen.Buttons -> handleButtonsInput(screen, keyCode, event.deviceId, event.repeatCount, button)
-            is IGMScreen.ReassignPlayers -> handleReassignPlayersInput(screen, button)
+        // Screens that need the raw event (deviceId, repeatCount) stay on the legacy switch
+        // path. Everything else routes through InputDispatcher so the shared substrate handles
+        // activation, mapping confirm-swap, held-state tracking, and feeds MenuNavigationPoller
+        // for auto-repeat. The dispatcher's callbacks bridge into legacyNavigate or into the
+        // currently-pushed ScreenInput handler, whichever is set.
+        if (screen is IGMScreen.Buttons) {
+            val button = resolveNavButton(keyCode, event.deviceId)
+            return handleButtonsInput(screen, keyCode, event.deviceId, event.repeatCount, button)
         }
+        if (screen is IGMScreen.Shortcuts) {
+            val button = resolveNavButton(keyCode, event.deviceId)
+            return handleShortcutsInput(screen, keyCode, button)
+        }
+        return inputDispatcher.handleKeyEvent(event) || super.onKeyDown(keyCode, event)
     }
 
     override fun onKeyUp(keyCode: Int, event: KeyEvent): Boolean {
@@ -1113,6 +1112,109 @@ class LibretroActivity : ComponentActivity() {
         dev.cannoli.scorza.input.CanonicalButton.BTN_MENU -> "btn_menu"
     }
 
+    /**
+     * Wires the shared InputDispatcher's canonical-event callbacks into IGM dispatch. The
+     * dispatcher's stable semantics (mapping.menuConfirm swap, activation, held-state tracking)
+     * are reused; the IGM's per-screen handle*Input switch is invoked via [legacyNavigate] for
+     * screens that have not been migrated to ScreenInput composables yet. When a screen has
+     * pushed a ScreenInput handler, that handler wins.
+     */
+    private fun wireDispatcherForIGM() {
+        val empty = dev.cannoli.scorza.input.screen.EmptyScreenInputHandler
+        inputDispatcher.onUp = {
+            val h = screenInputRegistry.top
+            if (h !== empty) h.onUp() else legacyNavigate("btn_up")
+        }
+        inputDispatcher.onDown = {
+            val h = screenInputRegistry.top
+            if (h !== empty) h.onDown() else legacyNavigate("btn_down")
+        }
+        inputDispatcher.onLeft = {
+            val h = screenInputRegistry.top
+            if (h !== empty) h.onLeft() else legacyNavigate("btn_left")
+        }
+        inputDispatcher.onRight = {
+            val h = screenInputRegistry.top
+            if (h !== empty) h.onRight() else legacyNavigate("btn_right")
+        }
+        inputDispatcher.onConfirm = {
+            val h = screenInputRegistry.top
+            if (h !== empty) h.onConfirm() else legacyNavigate("btn_south")
+        }
+        inputDispatcher.onBack = {
+            val h = screenInputRegistry.top
+            if (h !== empty) h.onBack() else legacyNavigate("btn_east")
+        }
+        inputDispatcher.onStart = {
+            val h = screenInputRegistry.top
+            if (h !== empty) h.onStart() else legacyNavigate("btn_start")
+        }
+        inputDispatcher.onSelect = {
+            val h = screenInputRegistry.top
+            if (h !== empty) h.onSelect() else legacyNavigate("btn_select")
+        }
+        inputDispatcher.onSelectUp = { screenInputRegistry.top.onSelectUp() }
+        inputDispatcher.onNorth = {
+            val h = screenInputRegistry.top
+            if (h !== empty) h.onNorth() else legacyNavigate("btn_north")
+        }
+        inputDispatcher.onWest = {
+            val h = screenInputRegistry.top
+            if (h !== empty) h.onWest() else legacyNavigate("btn_west")
+        }
+        inputDispatcher.onL1 = {
+            val h = screenInputRegistry.top
+            if (h !== empty) h.onL1() else legacyNavigate("btn_l")
+        }
+        inputDispatcher.onR1 = {
+            val h = screenInputRegistry.top
+            if (h !== empty) h.onR1() else legacyNavigate("btn_r")
+        }
+        inputDispatcher.onL2 = {
+            val h = screenInputRegistry.top
+            if (h !== empty) h.onL2() else legacyNavigate("btn_l2")
+        }
+        inputDispatcher.onR2 = {
+            val h = screenInputRegistry.top
+            if (h !== empty) h.onR2() else legacyNavigate("btn_r2")
+        }
+    }
+
+    /**
+     * Routes a semantic button event into the existing per-screen handle*Input switch. The IGM
+     * string vocabulary (post-resolveNavButton swap) treats "btn_south" as semantic confirm and
+     * "btn_east" as semantic back, which is what the dispatcher's onConfirm/onBack already
+     * provide via mapping.menuConfirm. Returns false for screens that depend on raw event details
+     * (Buttons, Shortcuts) -- those stay on the legacy onKeyDown switch path.
+     */
+    private fun legacyNavigate(button: String): Boolean {
+        val screen = currentScreen ?: return false
+        return when (screen) {
+            is IGMScreen.Menu -> handleMenuInput(screen, button)
+            is IGMScreen.Settings -> handleCategoryInput(screen, button)
+            is IGMScreen.Video -> handleVideoInput(screen, button)
+            is IGMScreen.Advanced -> handleAdvancedInput(screen, button)
+            is IGMScreen.ShaderSettings -> handleShaderSettingsInput(screen, button)
+            is IGMScreen.Emulator -> handleEmulatorInput(screen, button)
+            is IGMScreen.EmulatorCategory -> handleEmulatorCategoryInput(screen, button)
+            is IGMScreen.SavePrompt -> handleSavePromptInput(screen, button)
+            is IGMScreen.Info -> {
+                when (button) {
+                    "btn_east", "btn_south" -> { infoScrollDir = 0; pop(); true }
+                    "btn_up" -> { infoScrollDir = -1; true }
+                    "btn_down" -> { infoScrollDir = 1; true }
+                    else -> true
+                }
+            }
+            is IGMScreen.Achievements -> handleAchievementsInput(screen, button)
+            is IGMScreen.AchievementDetail -> handleAchievementDetailInput(screen, button)
+            is IGMScreen.GuidePicker -> handleGuidePickerInput(screen, button)
+            is IGMScreen.Guide -> handleGuideInput(screen, button)
+            is IGMScreen.ReassignPlayers -> handleReassignPlayersInput(screen, button)
+            is IGMScreen.Buttons -> false
+            is IGMScreen.Shortcuts -> false
+        }
+    }
 
     private fun syncSyntheticTrigger(
         deviceId: Int,
@@ -2520,6 +2622,7 @@ class LibretroActivity : ComponentActivity() {
         stopVsyncPacer()
         glSurfaceView?.onPause()
         if (!loading && !cleaned && sramPath.isNotEmpty()) { File(sramPath).parentFile?.mkdirs(); runner.saveSRAM(sramPath) }
+        if (::menuNavigationPoller.isInitialized) menuNavigationPoller.stop()
         if (::controllerBridge.isInitialized) {
             controllerBridge.onDeviceAdded = null
             controllerBridge.onDeviceRemoved = null
@@ -2551,6 +2654,10 @@ class LibretroActivity : ComponentActivity() {
         if (::sessionLog.isInitialized) sessionLog.log("onResume")
         if (autoSavedOnStop && cannoliRoot.isNotEmpty()) dev.cannoli.scorza.config.CannoliPaths(cannoliRoot).quickResumeFile.delete()
         autoSavedOnStop = false
+        if (::inputDispatcher.isInitialized) {
+            wireDispatcherForIGM()
+            menuNavigationPoller.start()
+        }
         if (::controllerBridge.isInitialized) {
             controllerBridge.onDeviceAdded = { device ->
                 val port = portRouter.portFor(device.androidDeviceId)
