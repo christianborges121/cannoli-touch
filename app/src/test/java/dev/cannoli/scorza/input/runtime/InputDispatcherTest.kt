@@ -201,6 +201,71 @@ class InputDispatcherTest {
     }
 
     @Test
+    fun phantom_device_never_activates_or_dispatches() {
+        val router = PortRouter()
+        router.onConnect(device(7), westernTemplate())
+        val d = InputDispatcher(router, ActiveMappingHolder())
+        var south = 0
+        d.onBack = { south++ }
+        // Nothing ever fires; phantom stays pending.
+        d.handleKeyEventForTest(deviceId = 7, keyCode = 96, action = android.view.KeyEvent.ACTION_UP, repeatCount = 0)
+        d.handleMotionEventForTest(deviceId = 7, axisValues = mapOf(0 to 0.0f, 1 to 0.0f))
+        assertFalse(router.isActivated(7))
+        org.junit.Assert.assertNull(router.portFor(7))
+        assertEquals(0, south)
+    }
+
+    @Test
+    fun first_press_activates_and_assigns_port() {
+        val router = PortRouter()
+        router.onConnect(device(7), westernTemplate())
+        val d = InputDispatcher(router, ActiveMappingHolder())
+        d.handleKeyEventForTest(deviceId = 7, keyCode = 96, action = android.view.KeyEvent.ACTION_DOWN, repeatCount = 0)
+        assertTrue(router.isActivated(7))
+        assertEquals(0, router.portFor(7))
+    }
+
+    @Test
+    fun first_motion_axis_press_activates_and_assigns_port() {
+        val template = westernTemplate().copy(
+            bindings = westernTemplate().bindings + (CanonicalButton.BTN_L2 to listOf(InputBinding.Axis(
+                axis = 17, restingValue = -1f, activeMin = 0f, activeMax = 1f, digitalThreshold = 0.5f,
+            )))
+        )
+        val router = PortRouter()
+        router.onConnect(device(7), template)
+        val d = InputDispatcher(router, ActiveMappingHolder())
+        d.handleMotionEventForTest(deviceId = 7, axisValues = mapOf(17 to 0.8f))
+        assertTrue(router.isActivated(7))
+        assertEquals(0, router.portFor(7))
+    }
+
+    @Test
+    fun first_to_press_wins_port_zero() {
+        val router = PortRouter()
+        router.onConnect(device(7), westernTemplate())
+        router.onConnect(device(8), westernTemplate())
+        val d = InputDispatcher(router, ActiveMappingHolder())
+        var t = 0L
+        d.clock = { ++t }
+        // Device 8 presses first.
+        d.handleKeyEventForTest(deviceId = 8, keyCode = 96, action = android.view.KeyEvent.ACTION_DOWN, repeatCount = 0)
+        // Then device 7.
+        d.handleKeyEventForTest(deviceId = 7, keyCode = 96, action = android.view.KeyEvent.ACTION_DOWN, repeatCount = 0)
+        assertEquals(0, router.portFor(8))
+        assertEquals(1, router.portFor(7))
+    }
+
+    @Test
+    fun action_up_alone_does_not_activate() {
+        val router = PortRouter()
+        router.onConnect(device(7), westernTemplate())
+        val d = InputDispatcher(router, ActiveMappingHolder())
+        d.handleKeyEventForTest(deviceId = 7, keyCode = 96, action = android.view.KeyEvent.ACTION_UP, repeatCount = 0)
+        assertFalse(router.isActivated(7))
+    }
+
+    @Test
     fun repeat_event_for_hat_bound_dpad_re_fires_callback_via_keycode_fallback() {
         // Template binds BTN_UP via Hat (axis 16, UP) — no Button binding for keycode 19.
         val template = westernTemplate().copy(

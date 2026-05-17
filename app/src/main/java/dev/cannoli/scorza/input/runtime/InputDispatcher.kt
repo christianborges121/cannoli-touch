@@ -14,6 +14,9 @@ class InputDispatcher @Inject constructor(
     private val activeMappingHolder: ActiveMappingHolder,
 ) {
 
+    /** Overridable for tests; production calls System.currentTimeMillis. */
+    internal var clock: () -> Long = { System.currentTimeMillis() }
+
     var onUp: () -> Unit = {}
     var onDown: () -> Unit = {}
     var onLeft: () -> Unit = {}
@@ -58,6 +61,7 @@ class InputDispatcher @Inject constructor(
                     val fallback = if (direct.isEmpty()) dpadFallbackForRepeat(evaluator, keyCode) else emptyList()
                     val canonicals = if (direct.isNotEmpty()) direct else fallback
                     if (canonicals.isEmpty()) return false
+                    maybeActivate(deviceId)
                     activeMappingHolder.set(mapping)
                     var fired = false
                     for (canonical in canonicals) {
@@ -76,6 +80,7 @@ class InputDispatcher @Inject constructor(
                         dev.cannoli.scorza.util.InputLog.write("key id=$deviceId code=$keyCode -> unbound")
                     }
                     if (deltas.isEmpty()) return false
+                    maybeActivate(deviceId)
                     activeMappingHolder.set(mapping)
                     var fired = false
                     for (delta in deltas) {
@@ -108,6 +113,7 @@ class InputDispatcher @Inject constructor(
         var fired = false
         for (delta in deltas) {
             if (delta is CanonicalEvent.Pressed) {
+                maybeActivate(deviceId)
                 activeMappingHolder.set(mapping)
                 if (dispatchPressed(delta.button, mapping)) fired = true
             } else if (delta is CanonicalEvent.Released && delta.button == CanonicalButton.BTN_SELECT) {
@@ -116,6 +122,12 @@ class InputDispatcher @Inject constructor(
             }
         }
         return fired
+    }
+
+    private fun maybeActivate(deviceId: Int) {
+        if (!portRouter.isActivated(deviceId)) {
+            portRouter.activate(deviceId, clock())
+        }
     }
 
     private fun dpadFallbackForRepeat(evaluator: PortEvaluator, keyCode: Int): List<CanonicalButton> {
