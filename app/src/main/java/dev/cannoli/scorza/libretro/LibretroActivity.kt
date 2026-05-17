@@ -2611,6 +2611,11 @@ class LibretroActivity : ComponentActivity() {
         glSurfaceView?.onPause()
         if (!loading && !cleaned && sramPath.isNotEmpty()) { File(sramPath).parentFile?.mkdirs(); runner.saveSRAM(sramPath) }
         if (::menuNavigationPoller.isInitialized) menuNavigationPoller.stop()
+        // Cancel any in-flight stick auto-repeat so it does not keep firing dispatcher callbacks
+        // after MainActivity has rewired them. menuHeldKey reset so the next resume reads a
+        // fresh direction transition.
+        menuRepeatHandler.removeCallbacks(menuRepeatRunnable)
+        menuHeldKey = 0
         if (::controllerBridge.isInitialized) {
             controllerBridge.onDeviceAdded = null
             controllerBridge.onDeviceRemoved = null

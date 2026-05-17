@@ -370,6 +370,11 @@ class MainActivity : ComponentActivity(), ActivityActions {
     override fun onPause() {
         super.onPause()
         menuNavigationPoller.stop()
+        // Cancel any in-flight stick auto-repeat so it does not keep firing dispatcher callbacks
+        // after LibretroActivity has rewired them. menuHeldDir reset so the next resume reads a
+        // fresh direction transition.
+        menuRepeatHandler.removeCallbacks(menuRepeatRunnable)
+        menuHeldDir = 0
         controllerBridge.onDeviceAdded = null
         controllerBridge.onDeviceRemoved = null
         if (isReady && nav.pendingRecentlyPlayedReorder) {
