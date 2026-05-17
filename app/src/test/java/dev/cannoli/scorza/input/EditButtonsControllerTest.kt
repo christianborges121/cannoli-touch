@@ -81,6 +81,54 @@ class EditButtonsControllerTest {
         assertFalse(controller.isListening)
     }
 
+    @Test fun `binding a key already used by another canonical swaps their bindings`() {
+        val template = emptyTemplate().copy(
+            bindings = mapOf(
+                CanonicalButton.BTN_SOUTH to listOf(InputBinding.Button(96)),
+                CanonicalButton.BTN_EAST to listOf(InputBinding.Button(97)),
+            ),
+        )
+        controller.startListening(template, CanonicalButton.BTN_SOUTH)
+        clockMs = 0
+        controller.captureRawKeyEvent(97)
+        clockMs = 500
+        val finalized = controller.tickAndMaybeFinalize() ?: error("expected finalized")
+        assertEquals(listOf(InputBinding.Button(97)), finalized.bindings[CanonicalButton.BTN_SOUTH])
+        assertEquals(listOf(InputBinding.Button(96)), finalized.bindings[CanonicalButton.BTN_EAST])
+    }
+
+    @Test fun `binding a key used by another canonical clears the other when new slot was empty`() {
+        val template = emptyTemplate().copy(
+            bindings = mapOf(CanonicalButton.BTN_EAST to listOf(InputBinding.Button(97))),
+        )
+        controller.startListening(template, CanonicalButton.BTN_SOUTH)
+        clockMs = 0
+        controller.captureRawKeyEvent(97)
+        clockMs = 500
+        val finalized = controller.tickAndMaybeFinalize() ?: error("expected finalized")
+        assertEquals(listOf(InputBinding.Button(97)), finalized.bindings[CanonicalButton.BTN_SOUTH])
+        assertEquals(emptyList<InputBinding>(), finalized.bindings[CanonicalButton.BTN_EAST])
+    }
+
+    @Test fun `swap removes only conflicting input from previous owner with multi-bind`() {
+        val template = emptyTemplate().copy(
+            bindings = mapOf(
+                CanonicalButton.BTN_SOUTH to listOf(InputBinding.Button(96)),
+                CanonicalButton.BTN_EAST to listOf(InputBinding.Button(97), InputBinding.Button(98)),
+            ),
+        )
+        controller.startListening(template, CanonicalButton.BTN_SOUTH)
+        clockMs = 0
+        controller.captureRawKeyEvent(97)
+        clockMs = 500
+        val finalized = controller.tickAndMaybeFinalize() ?: error("expected finalized")
+        assertEquals(listOf(InputBinding.Button(97)), finalized.bindings[CanonicalButton.BTN_SOUTH])
+        val east = finalized.bindings[CanonicalButton.BTN_EAST] ?: emptyList()
+        assertTrue("expected old south binding restored to east", east.contains(InputBinding.Button(96)))
+        assertTrue("expected non-conflicting binding preserved", east.contains(InputBinding.Button(98)))
+        assertFalse("conflicting key 97 should be gone from east", east.contains(InputBinding.Button(97)))
+    }
+
     @Test fun `existing bindings on other canonicals are preserved`() {
         val template = emptyTemplate().copy(
             bindings = mapOf(CanonicalButton.BTN_EAST to listOf(InputBinding.Button(97))),

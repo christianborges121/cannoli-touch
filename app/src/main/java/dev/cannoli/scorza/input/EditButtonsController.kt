@@ -116,7 +116,32 @@ class EditButtonsController @Inject constructor(
             }
         }
 
-        val newBindings = mapping.bindings.toMutableMap().apply { this[canonical] = bindings }
+        val oldBindings = mapping.bindings[canonical].orEmpty()
+        val newBindings = mapping.bindings.toMutableMap()
+        newBindings[canonical] = bindings
+
+        var displacedSlotFilled = false
+        for ((other, otherBindings) in mapping.bindings) {
+            if (other == canonical) continue
+            if (otherBindings.isEmpty()) continue
+            val filtered = otherBindings.filterNot { existing ->
+                bindings.any { incoming -> sameInput(existing, incoming) }
+            }
+            if (filtered.size == otherBindings.size) continue
+            if (!displacedSlotFilled && oldBindings.isNotEmpty()) {
+                newBindings[other] = filtered + oldBindings
+                displacedSlotFilled = true
+                dev.cannoli.scorza.util.InputLog.write(
+                    "[edit] swap canonical=$canonical displaced=$other restored=$oldBindings"
+                )
+            } else {
+                newBindings[other] = filtered
+                dev.cannoli.scorza.util.InputLog.write(
+                    "[edit] steal canonical=$canonical clearedFrom=$other"
+                )
+            }
+        }
+
         val saved = mapping.copy(bindings = newBindings, userEdited = true)
         repository.save(saved)
         portRouter.updateMapping(saved, rebuildEvaluator = true)
@@ -126,4 +151,15 @@ class EditButtonsController @Inject constructor(
         cancelListening()
         return saved
     }
+
+    private fun sameInput(a: InputBinding, b: InputBinding): Boolean = when {
+        a is InputBinding.Button && b is InputBinding.Button -> a.keyCode == b.keyCode
+        a is InputBinding.Hat && b is InputBinding.Hat -> a.axis == b.axis && a.direction == b.direction
+        a is InputBinding.Axis && b is InputBinding.Axis -> {
+            a.axis == b.axis && sameSign(a.activeMax, b.activeMax)
+        }
+        else -> false
+    }
+
+    private fun sameSign(x: Float, y: Float): Boolean = (x >= 0f) == (y >= 0f)
 }
