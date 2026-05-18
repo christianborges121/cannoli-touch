@@ -135,4 +135,40 @@ class MappingResolverTest {
         assertEquals("disk_wins", resolved.mapping.id)
     }
 
+    // Retroid handhelds rewrite a paired BT pad's gamepad endpoint to report the built-in's
+    // VID/PID while keeping the BT pad's actual name. The cfg whose name matches the device must
+    // win over the cfg whose VID/PID happens to match -- otherwise the DualSense inherits the
+    // built-in's button layout and the saved file's [match] block gets the built-in's identity.
+    @Test
+    fun phantom_rewrite_prefers_name_matching_cfg_over_vidpid_matching_cfg() {
+        val repo = makeRepo()
+        val phantomDualSense = ConnectedDevice(
+            androidDeviceId = 11,
+            descriptor = "c575e892a6bb353df4b1327e81beedf84b540eb4",
+            name = "DualSense Wireless Controller",
+            vendorId = 8226,
+            productId = 12289,
+            androidBuildModel = "Retroid Pocket Classic",
+            sourceMask = 0,
+            connectedAtMillis = 0L,
+        )
+        val ra = listOf(
+            RetroArchCfgEntry(
+                deviceName = "Retroid Pocket Controller",
+                vendorId = 8226, productId = 12289,
+                buttonBindings = mapOf("a_btn" to 96),
+            ),
+            RetroArchCfgEntry(
+                deviceName = "DualSense Wireless Controller",
+                vendorId = 1356, productId = 3302,
+                buttonBindings = mapOf("b_btn" to 96, "a_btn" to 97),
+            ),
+        )
+        val resolved = makeResolver(repo, bundledRa = ra).resolve(phantomDualSense)
+        assertEquals(MappingSource.RETROARCH_AUTOCONFIG, resolved.mapping.source)
+        assertEquals("DualSense Wireless Controller", resolved.mapping.match.name)
+        assertEquals(1356, resolved.mapping.match.vendorId)
+        assertEquals(3302, resolved.mapping.match.productId)
+    }
+
 }

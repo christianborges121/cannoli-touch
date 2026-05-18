@@ -59,31 +59,28 @@ class MappingResolver(
         )
     }
 
+    // Name signal beats VID/PID signal when they disagree. On phantom-rewrite hosts (Retroid
+    // handhelds rewriting a paired BT pad's gamepad endpoint to report the built-in's VID/PID
+    // while keeping the BT pad's own name), the device's reported VID/PID identifies a different
+    // bundled cfg than the device's name does, and only the name-matching cfg has the right
+    // button layout for the physical pad in the user's hand.
     private fun bestRetroArchEntry(device: ConnectedDevice): RetroArchCfgEntry? {
-        var best: RetroArchCfgEntry? = null
-        var bestScore = 0
+        var nameAndVidPid: RetroArchCfgEntry? = null
+        var nameOnly: RetroArchCfgEntry? = null
+        var vidPidOnly: RetroArchCfgEntry? = null
         for (entry in bundledRetroArchEntries) {
-            val score = scoreEntry(entry, device)
-            if (score > bestScore) {
-                best = entry
-                bestScore = score
+            val nameMatch = entry.deviceName.isNotEmpty() && entry.deviceName == device.name
+            val hasVidPid = device.vendorId != 0 && device.productId != 0 &&
+                entry.vendorId != null && entry.productId != null
+            val vidPidMatch = hasVidPid &&
+                entry.vendorId == device.vendorId &&
+                entry.productId == device.productId
+            when {
+                nameMatch && vidPidMatch -> if (nameAndVidPid == null) nameAndVidPid = entry
+                nameMatch -> if (nameOnly == null) nameOnly = entry
+                vidPidMatch -> if (vidPidOnly == null) vidPidOnly = entry
             }
         }
-        return if (bestScore >= 30) best else null
-    }
-
-    private fun scoreEntry(entry: RetroArchCfgEntry, device: ConnectedDevice): Int {
-        val nameMatch = entry.deviceName.isNotEmpty() && entry.deviceName == device.name
-        val hasVidPid = device.vendorId != 0 && device.productId != 0 &&
-            entry.vendorId != null && entry.productId != null
-        val vidPidMatch = hasVidPid &&
-            entry.vendorId == device.vendorId &&
-            entry.productId == device.productId
-        return when {
-            nameMatch && vidPidMatch -> 50
-            vidPidMatch -> 30
-            nameMatch -> 20
-            else -> 0
-        }
+        return nameAndVidPid ?: nameOnly ?: vidPidOnly
     }
 }
