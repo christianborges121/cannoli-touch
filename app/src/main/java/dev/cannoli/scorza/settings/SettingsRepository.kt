@@ -134,6 +134,7 @@ class SettingsRepository @Inject constructor(@ApplicationContext private val con
     var sdCardRoot: String
         get() = prefs.getString(KEY_SD_ROOT, DEFAULT_ROOT) ?: DEFAULT_ROOT
         set(value) {
+            if (value == sdCardRoot) return
             prefs.edit().putString(KEY_SD_ROOT, value).apply()
             settingsFile = dev.cannoli.scorza.config.CannoliPaths(value).settingsJson
             loadFromDisk()
