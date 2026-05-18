@@ -25,10 +25,20 @@ data class DeviceMatchRule(
         // even though the names plainly say they're different devices. Compare trimmed strings
         // so kernel-side whitespace inconsistencies (trailing spaces on some Android builds) do
         // not break legitimate matches.
+        //
+        // Exception: when the names share a non-trivial prefix at a word boundary, treat it as
+        // the same physical pad surfaced under a different EventHub sub-device label. Android
+        // merges multi-interface HID controllers (e.g. GameSir-Pocket exposes "Keyboard" /
+        // "Consumer Control" / "GameSir-Pocket 1" evdev nodes) into one InputDevice but seeds
+        // the merged name from whichever sub-device opened first, so the surfaced name flips
+        // across boots while VID/PID stay stable. The Retroid VID/PID-collision case still
+        // rejects because the colliding pads (built-in vs. BT) share no meaningful prefix.
         val ruleName = name?.trim()
         val inputName = input.name.trim()
         if (!ruleName.isNullOrEmpty() && inputName.isNotEmpty() && ruleName != inputName) {
-            return 0
+            if (sharedPrefixAtWordBoundary(ruleName, inputName) < MIN_NAME_PREFIX_LEN) {
+                return 0
+            }
         }
 
         var score = 0
@@ -70,5 +80,21 @@ data class DeviceMatchRule(
         }
 
         return score
+    }
+
+    private companion object {
+        const val MIN_NAME_PREFIX_LEN = 5
+
+        fun sharedPrefixAtWordBoundary(a: String, b: String): Int {
+            val rawCommon = a.commonPrefixWith(b)
+            if (rawCommon.length < MIN_NAME_PREFIX_LEN) return 0
+            val aRest = a.substring(rawCommon.length)
+            val bRest = b.substring(rawCommon.length)
+            val endsInWhitespace = rawCommon.last().isWhitespace()
+            val aBoundary = aRest.isEmpty() || aRest[0].isWhitespace()
+            val bBoundary = bRest.isEmpty() || bRest[0].isWhitespace()
+            if (!endsInWhitespace && !aBoundary && !bBoundary) return 0
+            return rawCommon.trimEnd().length
+        }
     }
 }

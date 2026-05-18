@@ -121,6 +121,49 @@ class DeviceMatchRuleTest {
     }
 
     @Test
+    fun named_rule_matches_input_when_names_share_word_boundary_prefix() {
+        // GameSir-Pocket exposes three evdev nodes (Keyboard / Consumer Control / GameSir-Pocket 1)
+        // and Android seeds the merged InputDevice name from whichever sub-device opened first.
+        // The surfaced name flips across boots while VID/PID stay stable, so the gate must allow
+        // the match when the names share a real prefix at a word boundary.
+        val rule = DeviceMatchRule(
+            name = "GameSir-Pocket 1 Keyboard",
+            vendorId = 13623,
+            productId = 4402,
+            descriptor = "90b9e58f89ba3547e8eec21b9fb2ce1adb55fb05",
+        )
+        val rebootedAs = MatchInput(
+            name = "GameSir-Pocket 1 Consumer Control",
+            vendorId = 13623,
+            productId = 4402,
+            androidBuildModel = "moto g play - 2024",
+            sourceMask = 0,
+            descriptor = "f1507ba28615dd3b7df034bb29eb4efcc97f2e9c",
+        )
+        assertEquals(100, rule.score(rebootedAs))
+    }
+
+    @Test
+    fun named_rule_rejects_when_shared_prefix_falls_below_word_boundary_threshold() {
+        // Two Retroid pads with faked-identical VID/PID that share only a few characters
+        // ("Sony" vs "Sony D..." doesn't apply here — pick names that share <5 chars at a
+        // boundary). The gate must still reject.
+        val rule = DeviceMatchRule(
+            name = "Xbox Wireless Controller",
+            vendorId = 8226,
+            productId = 12289,
+        )
+        val otherPad = MatchInput(
+            name = "Xbla Pro",
+            vendorId = 8226,
+            productId = 12289,
+            androidBuildModel = "RP4PRO",
+            sourceMask = 0,
+        )
+        assertEquals(0, rule.score(otherPad))
+    }
+
+    @Test
     fun rule_score_caps_at_100_plus_10() {
         val rule = DeviceMatchRule(
             name = "Stadia Controller",
