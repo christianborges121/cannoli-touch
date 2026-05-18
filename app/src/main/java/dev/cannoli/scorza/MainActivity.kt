@@ -29,6 +29,11 @@ import androidx.core.content.ContextCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import dagger.hilt.android.AndroidEntryPoint
 import dev.cannoli.scorza.boot.BootSequencer
 import dev.cannoli.scorza.boot.BootState
@@ -143,8 +148,15 @@ class MainActivity : ComponentActivity(), ActivityActions {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        if (Build.VERSION.SDK_INT >= 31) {
-            splashScreen.setOnExitAnimationListener { it.remove() }
+        val splash = installSplashScreen()
+        splash.setKeepOnScreenCondition {
+            if (!::bootSequencer.isInitialized) return@setKeepOnScreenCondition true
+            val state = bootSequencer.state.value
+            when (state) {
+                BootState.Ready -> false
+                is BootState.Initializing -> !settings.scanLibraryAutomatically
+                else -> true
+            }
         }
         super.onCreate(savedInstanceState)
 
@@ -220,7 +232,25 @@ class MainActivity : ComponentActivity(), ActivityActions {
                             }
                             ReadyNavGraph()
                         }
-                        is BootState.Initializing -> Box(modifier = Modifier.fillMaxSize()) {}
+                        is BootState.Initializing -> {
+                            if (settings.scanLibraryAutomatically) {
+                                val kind = when (s.phase) {
+                                    dev.cannoli.scorza.boot.BootPhase.IMPORT ->
+                                        dev.cannoli.scorza.ui.screens.HousekeepingKind.DATABASE_MIGRATION
+                                    dev.cannoli.scorza.boot.BootPhase.INITIAL_SCAN ->
+                                        dev.cannoli.scorza.ui.screens.HousekeepingKind.INITIAL_SCAN
+                                    dev.cannoli.scorza.boot.BootPhase.LIBRARY_REFRESH ->
+                                        dev.cannoli.scorza.ui.screens.HousekeepingKind.LIBRARY_REFRESH
+                                }
+                                dev.cannoli.scorza.ui.screens.HousekeepingScreen(
+                                    kind = kind,
+                                    progress = s.progress,
+                                    statusLabel = s.label,
+                                )
+                            } else {
+                                Box(modifier = Modifier.fillMaxSize()) {}
+                            }
+                        }
                         is BootState.Error -> BootErrorScreen(message = s.message)
                         is BootState.Ready -> ReadyNavGraph()
                     }

@@ -42,7 +42,7 @@
             android:name=".MainActivity"
             android:exported="true"
             android:label="@string/app_name"
-            android:theme="@style/Theme.Cannoli"
+            android:theme="@style/Theme.Cannoli.Splash"
             android:configChanges="keyboard|keyboardHidden|orientation|screenSize|smallestScreenSize|screenLayout|uiMode|density|navigation|touchscreen"
             android:launchMode="singleTop"
             android:resizeableActivity="false"
