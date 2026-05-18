@@ -802,11 +802,16 @@ class LibretroActivity : ComponentActivity() {
         if (::stickAutoRepeat.isInitialized) stickAutoRepeat.handleMotion(event)
 
         // Guide-screen special case: it owns its own continuous scroll mechanism (guideScrollDir
-        // polled from a separate runnable). Reset it when the stick returns to neutral.
+        // polled from a separate runnable). Reset it when BOTH stick AND hat return to neutral.
+        // Checking only the stick would erase the scroll-dir on every hat motion event for
+        // hat-only D-pads (Retroid built-in), wiping the value handleGuideInput just set.
         if (currentScreen is IGMScreen.Guide) {
             val stickX = event.getAxisValue(android.view.MotionEvent.AXIS_X)
             val stickY = event.getAxisValue(android.view.MotionEvent.AXIS_Y)
-            if (kotlin.math.abs(stickX) < 0.5f && kotlin.math.abs(stickY) < 0.5f) {
+            val hatX = event.getAxisValue(android.view.MotionEvent.AXIS_HAT_X)
+            val hatY = event.getAxisValue(android.view.MotionEvent.AXIS_HAT_Y)
+            if (kotlin.math.abs(stickX) < 0.5f && kotlin.math.abs(stickY) < 0.5f &&
+                kotlin.math.abs(hatX) < 0.5f && kotlin.math.abs(hatY) < 0.5f) {
                 guideScrollDir = 0
                 guideScrollXDir = 0
             }
@@ -1138,12 +1143,32 @@ class LibretroActivity : ComponentActivity() {
         is IGMScreen.Guide -> simpleIgmHandler { btn -> handleGuideInput(screen, btn) }
         is IGMScreen.ReassignPlayers -> simpleIgmHandler { btn -> handleReassignPlayersInput(screen, btn) }
         is IGMScreen.Buttons -> object : dev.cannoli.scorza.input.ScreenInputHandler {
+            // Canonical events for nav between rows (works for hat-only D-pads where no KeyEvent
+            // arrives). When the screen is in capture mode (listeningCanonical != null) we
+            // ignore canonical events; the raw hook captures the keycode for binding.
+            override fun onUp() { handleButtonsInput(screen, 0, 0, 0, "btn_up") }
+            override fun onDown() { handleButtonsInput(screen, 0, 0, 0, "btn_down") }
+            override fun onLeft() { handleButtonsInput(screen, 0, 0, 0, "btn_left") }
+            override fun onRight() { handleButtonsInput(screen, 0, 0, 0, "btn_right") }
+            override fun onConfirm() { handleButtonsInput(screen, 0, 0, 0, "btn_south") }
+            override fun onBack() { handleButtonsInput(screen, 0, 0, 0, "btn_east") }
+            override fun onNorth() { handleButtonsInput(screen, 0, 0, 0, "btn_north") }
+            override fun onWest() { handleButtonsInput(screen, 0, 0, 0, "btn_west") }
             override fun onRawKeyDown(keyCode: Int, event: KeyEvent): Boolean {
                 val button = resolveNavButton(keyCode, event.deviceId)
                 return handleButtonsInput(screen, keyCode, event.deviceId, event.repeatCount, button)
             }
         }
         is IGMScreen.Shortcuts -> object : dev.cannoli.scorza.input.ScreenInputHandler {
+            // Canonical events for nav (between rows + L/R cycle on the source row). When
+            // listening for a chord, the raw hook records keys.
+            override fun onUp() { handleShortcutsInput(screen, 0, "btn_up") }
+            override fun onDown() { handleShortcutsInput(screen, 0, "btn_down") }
+            override fun onLeft() { handleShortcutsInput(screen, 0, "btn_left") }
+            override fun onRight() { handleShortcutsInput(screen, 0, "btn_right") }
+            override fun onConfirm() { handleShortcutsInput(screen, 0, "btn_south") }
+            override fun onBack() { handleShortcutsInput(screen, 0, "btn_east") }
+            override fun onNorth() { handleShortcutsInput(screen, 0, "btn_north") }
             override fun onRawKeyDown(keyCode: Int, event: KeyEvent): Boolean {
                 val button = resolveNavButton(keyCode, event.deviceId)
                 return handleShortcutsInput(screen, keyCode, button)
