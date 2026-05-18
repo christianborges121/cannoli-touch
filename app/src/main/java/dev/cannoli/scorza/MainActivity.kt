@@ -153,9 +153,9 @@ class MainActivity : ComponentActivity(), ActivityActions {
             if (!::bootSequencer.isInitialized) return@setKeepOnScreenCondition true
             val state = bootSequencer.state.value
             when (state) {
-                BootState.Ready -> false
+                BootState.Resolving -> true
                 is BootState.Initializing -> !settings.scanLibraryAutomatically
-                else -> true
+                else -> false
             }
         }
         super.onCreate(savedInstanceState)
