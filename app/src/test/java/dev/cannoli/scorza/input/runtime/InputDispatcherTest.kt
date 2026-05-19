@@ -306,4 +306,155 @@ class InputDispatcherTest {
         d.handleKeyEventForTest(deviceId = 7, keyCode = android.view.KeyEvent.KEYCODE_DPAD_UP, action = android.view.KeyEvent.ACTION_DOWN, repeatCount = 2)
         org.junit.Assert.assertEquals(1, up)
     }
+
+    @Test
+    fun wireToRegistry_routes_every_canonical_callback_through_registry_top() {
+        val registry = ScreenInputRegistry()
+        var observed: String? = null
+        val handler = object : dev.cannoli.scorza.input.ScreenInputHandler {
+            override fun onUp() { observed = "up" }
+            override fun onDown() { observed = "down" }
+            override fun onLeft() { observed = "left" }
+            override fun onRight() { observed = "right" }
+            override fun onConfirm() { observed = "confirm" }
+            override fun onBack() { observed = "back" }
+            override fun onStart() { observed = "start" }
+            override fun onSelect() { observed = "select" }
+            override fun onSelectUp() { observed = "selectUp" }
+            override fun onNorth() { observed = "north" }
+            override fun onWest() { observed = "west" }
+            override fun onL1() { observed = "l1" }
+            override fun onR1() { observed = "r1" }
+            override fun onL2() { observed = "l2" }
+            override fun onR2() { observed = "r2" }
+        }
+        registry.push(handler)
+        val dispatcher = InputDispatcher(PortRouter(), ActiveMappingHolder(), registry)
+        dispatcher.wireToRegistry(dialogHandler = null)
+
+        dispatcher.onUp(); assertEquals("up", observed)
+        dispatcher.onDown(); assertEquals("down", observed)
+        dispatcher.onLeft(); assertEquals("left", observed)
+        dispatcher.onRight(); assertEquals("right", observed)
+        dispatcher.onConfirm(); assertEquals("confirm", observed)
+        dispatcher.onBack(); assertEquals("back", observed)
+        dispatcher.onStart(); assertEquals("start", observed)
+        dispatcher.onSelect(); assertEquals("select", observed)
+        dispatcher.onSelectUp(); assertEquals("selectUp", observed)
+        dispatcher.onNorth(); assertEquals("north", observed)
+        dispatcher.onWest(); assertEquals("west", observed)
+        dispatcher.onL1(); assertEquals("l1", observed)
+        dispatcher.onR1(); assertEquals("r1", observed)
+        dispatcher.onL2(); assertEquals("l2", observed)
+        dispatcher.onR2(); assertEquals("r2", observed)
+    }
+
+    @Test
+    fun wireToRegistry_dialog_handler_takes_precedence_over_screen() {
+        val registry = ScreenInputRegistry()
+        var dialogHit = false
+        var screenHit = false
+        val screenHandler = object : dev.cannoli.scorza.input.ScreenInputHandler {
+            override fun onUp() { screenHit = true }
+        }
+        registry.push(screenHandler)
+        val dialog = object : dev.cannoli.scorza.input.DialogPrecedence {
+            override fun onUp(): Boolean { dialogHit = true; return true }
+        }
+        val dispatcher = InputDispatcher(PortRouter(), ActiveMappingHolder(), registry)
+        dispatcher.wireToRegistry(dialogHandler = dialog)
+
+        dispatcher.onUp()
+        assertTrue(dialogHit)
+        assertFalse(screenHit)
+    }
+
+    @Test
+    fun wireToRegistry_dialog_handler_falls_through_when_it_does_not_consume() {
+        val registry = ScreenInputRegistry()
+        var dialogHit = false
+        var screenHit = false
+        val screenHandler = object : dev.cannoli.scorza.input.ScreenInputHandler {
+            override fun onUp() { screenHit = true }
+        }
+        registry.push(screenHandler)
+        val dialog = object : dev.cannoli.scorza.input.DialogPrecedence {
+            override fun onUp(): Boolean { dialogHit = true; return false }
+        }
+        val dispatcher = InputDispatcher(PortRouter(), ActiveMappingHolder(), registry)
+        dispatcher.wireToRegistry(dialogHandler = dialog)
+
+        dispatcher.onUp()
+        assertTrue(dialogHit)
+        assertTrue(screenHit)
+    }
+
+    @Test
+    fun dpad_up_via_keycode_fires_onUp() {
+        val (d, _, _) = setup(westernTemplate())
+        var up = 0
+        d.onUp = { up++ }
+        // KEYCODE_DPAD_UP = 19, bound in westernTemplate to BTN_UP via InputBinding.Button(19).
+        d.handleKeyEventForTest(deviceId = 7, keyCode = 19, action = android.view.KeyEvent.ACTION_DOWN, repeatCount = 0)
+        assertEquals(1, up)
+    }
+
+    @Test
+    fun dpad_up_via_hat_axis_fires_onUp() {
+        val template = DeviceMapping(
+            id = "hat-pad",
+            displayName = "Hat Pad",
+            match = DeviceMatchRule(),
+            bindings = mapOf(
+                CanonicalButton.BTN_UP to listOf(
+                    InputBinding.Hat(
+                        axis = android.view.MotionEvent.AXIS_HAT_Y,
+                        direction = HatDirection.UP,
+                    )
+                ),
+            ),
+            menuConfirm = CanonicalButton.BTN_SOUTH,
+            menuBack = CanonicalButton.BTN_EAST,
+            glyphStyle = GlyphStyle.PLUMBER,
+            source = MappingSource.RETROARCH_AUTOCONFIG,
+        )
+        val (d, _, _) = setup(template)
+        var up = 0
+        d.onUp = { up++ }
+        d.handleMotionEventForTest(deviceId = 7, axisValues = mapOf(android.view.MotionEvent.AXIS_HAT_Y to -1f))
+        assertEquals(1, up)
+    }
+
+    @Test
+    fun dpad_keycode_auto_repeat_is_dropped_when_evaluator_already_holds_canonical() {
+        // GameSir Pocket Taco scenario: device emits AXIS_HAT_Y motion (canonical held) and then
+        // Android also synthesizes KEYCODE_DPAD_UP with repeatCount > 0. The repeat must not produce
+        // a second onUp(); MenuNavigationPoller is responsible for held-state nav repeat.
+        val template = DeviceMapping(
+            id = "hybrid-pad",
+            displayName = "Hybrid Pad",
+            match = DeviceMatchRule(),
+            bindings = mapOf(
+                CanonicalButton.BTN_UP to listOf(
+                    InputBinding.Button(19),
+                    InputBinding.Hat(
+                        axis = android.view.MotionEvent.AXIS_HAT_Y,
+                        direction = HatDirection.UP,
+                    ),
+                ),
+            ),
+            menuConfirm = CanonicalButton.BTN_SOUTH,
+            menuBack = CanonicalButton.BTN_EAST,
+            glyphStyle = GlyphStyle.PLUMBER,
+            source = MappingSource.RETROARCH_AUTOCONFIG,
+        )
+        val (d, _, _) = setup(template)
+        var up = 0
+        d.onUp = { up++ }
+        d.handleMotionEventForTest(deviceId = 7, axisValues = mapOf(android.view.MotionEvent.AXIS_HAT_Y to -1f))
+        assertEquals(1, up)
+        // Synthesized keycode auto-repeat for the same canonical must not double-fire.
+        d.handleKeyEventForTest(deviceId = 7, keyCode = 19, action = android.view.KeyEvent.ACTION_DOWN, repeatCount = 1)
+        assertEquals(1, up)
+    }
 }
