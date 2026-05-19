@@ -457,4 +457,38 @@ class InputDispatcherTest {
         d.handleKeyEventForTest(deviceId = 7, keyCode = 19, action = android.view.KeyEvent.ACTION_DOWN, repeatCount = 1)
         assertEquals(1, up)
     }
+
+    @Test
+    fun dpad_keycode_initial_press_after_hat_assertion_does_not_double_fire() {
+        // Hybrid pad (HAT + KEYCODE_DPAD): HAT fires first, then a non-repeat synthesized
+        // KEYCODE_DPAD_UP arrives. The evaluator's per-source assert tracking dedupes the
+        // initial press (BTN_UP already asserted from the HAT path) so onUp fires only once.
+        // This complements the auto-repeat dedup case above and pins the contract for the
+        // first press transition.
+        val template = DeviceMapping(
+            id = "hybrid-pad-initial",
+            displayName = "Hybrid Pad",
+            match = DeviceMatchRule(),
+            bindings = mapOf(
+                CanonicalButton.BTN_UP to listOf(
+                    InputBinding.Button(19),
+                    InputBinding.Hat(
+                        axis = android.view.MotionEvent.AXIS_HAT_Y,
+                        direction = HatDirection.UP,
+                    ),
+                ),
+            ),
+            menuConfirm = CanonicalButton.BTN_SOUTH,
+            menuBack = CanonicalButton.BTN_EAST,
+            glyphStyle = GlyphStyle.PLUMBER,
+            source = MappingSource.RETROARCH_AUTOCONFIG,
+        )
+        val (d, _, _) = setup(template)
+        var up = 0
+        d.onUp = { up++ }
+        d.handleMotionEventForTest(deviceId = 7, axisValues = mapOf(android.view.MotionEvent.AXIS_HAT_Y to -1f))
+        assertEquals(1, up)
+        d.handleKeyEventForTest(deviceId = 7, keyCode = 19, action = android.view.KeyEvent.ACTION_DOWN, repeatCount = 0)
+        assertEquals(1, up)
+    }
 }
