@@ -23,9 +23,11 @@ object InputModule {
         activity: Activity,
         viewModel: InputTesterViewModel,
         portRouter: dev.cannoli.scorza.input.runtime.PortRouter,
+        activeMappingHolder: dev.cannoli.scorza.input.runtime.ActiveMappingHolder,
     ): InputTesterController = InputTesterController(
         viewModel = viewModel,
         portRouter = portRouter,
+        activeMappingHolder = activeMappingHolder,
         unknownDeviceName = activity.getString(R.string.input_tester_device_unknown),
         keyboardDeviceName = activity.getString(R.string.input_tester_device_keyboard),
     )

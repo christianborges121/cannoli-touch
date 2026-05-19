@@ -8,6 +8,7 @@ import dev.cannoli.scorza.input.AnalogRole
 import dev.cannoli.scorza.input.CanonicalButton
 import dev.cannoli.scorza.input.DeviceMapping
 import dev.cannoli.scorza.input.InputBinding
+import dev.cannoli.scorza.input.runtime.ActiveMappingHolder
 import dev.cannoli.scorza.input.runtime.PortRouter
 import dev.cannoli.scorza.ui.viewmodel.DeviceInfo
 import dev.cannoli.scorza.ui.viewmodel.InputTesterViewModel
@@ -15,6 +16,7 @@ import dev.cannoli.scorza.ui.viewmodel.InputTesterViewModel
 class InputTesterController(
     private val viewModel: InputTesterViewModel,
     private val portRouter: PortRouter,
+    private val activeMappingHolder: ActiveMappingHolder,
     private val unknownDeviceName: String,
     private val keyboardDeviceName: String,
 ) {
@@ -68,7 +70,10 @@ class InputTesterController(
             val resolved = mappingNav ?: AndroidGamepadKeyNames.DEFAULT_KEY_MAP[event.keyCode]
             pressedKeycodes[event.keyCode] = resolved
             viewModel.onKeyDown(port, event.keyCode, keyName, deviceId, name, resolved)
-            if (!isRepeat) viewModel.setActivePort(port)
+            if (!isRepeat) {
+                viewModel.setActivePort(port)
+                portRouter.mappingForPort(port)?.let { activeMappingHolder.set(it) }
+            }
         } else {
             if (navButton == "btn_select" && selectHeld) {
                 selectHeld = false
@@ -117,7 +122,10 @@ class InputTesterController(
 
         val activatesPort = leftTrigger > 0.1f || rightTrigger > 0.1f ||
             kotlin.math.abs(hatX) > 0.5f || kotlin.math.abs(hatY) > 0.5f
-        if (activatesPort) viewModel.setActivePort(port)
+        if (activatesPort) {
+            viewModel.setActivePort(port)
+            mapping?.let { activeMappingHolder.set(it) }
+        }
 
         val dumpAxes = event.device?.motionRanges?.map { it.axis }?.distinct() ?: emptyList()
         viewModel.recordAxisValues(port, dumpAxes.associateWith { event.getAxisValue(it) })
