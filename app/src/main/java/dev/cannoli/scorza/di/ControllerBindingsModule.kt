@@ -37,7 +37,7 @@ object ControllerBindingsModule {
     fun provideBundledAutoconfigEntries(
         @ApplicationContext context: Context,
     ): BundledAutoconfigEntries =
-        BundledAutoconfigEntries { AutoconfigLoader(AssetCfgSource(context)).entries() }
+        BundledAutoconfigEntries(AutoconfigLoader(AssetCfgSource(context)).entries())
 
     @Provides
     @Singleton
