@@ -43,19 +43,6 @@ data class DeviceMatchRule(
 
         var score = 0
 
-        // Descriptor match is the canonical signal for "same physical pad". Wins over everything
-        // else when present, because two pads of the same make/model report identical name+vid+pid
-        // but produce different InputDevice descriptors (Android hashes the kernel uniqueId into
-        // the descriptor for BT devices, and for phantom-rewrite hosts the sibling descriptors
-        // carry the uniqueness — see ControllerBridge.settle for the sibling-folding logic).
-        val ruleDescriptor = descriptor
-        val inputDescriptor = input.descriptor
-        val descriptorMatched = ruleDescriptor != null && ruleDescriptor.isNotEmpty() &&
-            inputDescriptor != null && inputDescriptor == ruleDescriptor
-        if (descriptorMatched) {
-            score += 200
-        }
-
         val ruleVid = vendorId
         val rulePid = productId
         val vidPidMatched = ruleVid != null && rulePid != null && ruleVid != 0 && rulePid != 0 &&
@@ -64,14 +51,30 @@ data class DeviceMatchRule(
             score += 100
         }
 
-        // Name only scores when vid+pid did not already match; vid+pid subsumes name identity.
-        if (!vidPidMatched && !ruleName.isNullOrEmpty() && ruleName == inputName) {
+        // Name accrues independently of VID/PID. Compositing the two strengthens the signal when
+        // both agree (the strongest identification Android reliably provides), and lets name carry
+        // the match on its own when VID/PID is 0:0 (common on Bluetooth controllers whose kernel
+        // driver does not surface VID/PID through InputDevice).
+        if (!ruleName.isNullOrEmpty() && ruleName == inputName) {
             score += 50
         }
 
         val ruleModel = androidBuildModel
         if (ruleModel != null && ruleModel.isNotEmpty() && ruleModel == input.androidBuildModel) {
             score += 100
+        }
+
+        // Descriptor is a tiebreaker, not a primary key. Android salts the descriptor with a
+        // per-session nonce on some kernels (notably for BT controllers and phantom-rewrite hosts),
+        // so descriptor stability across reconnect cycles is not guaranteed. Keep a small bonus so
+        // that on stable kernels two physically distinct pads of the same make/model can still be
+        // distinguished by their descriptors, but rely on name+VID/PID for the main signal.
+        val ruleDescriptor = descriptor
+        val inputDescriptor = input.descriptor
+        val descriptorMatched = ruleDescriptor != null && ruleDescriptor.isNotEmpty() &&
+            inputDescriptor != null && inputDescriptor == ruleDescriptor
+        if (descriptorMatched) {
+            score += 30
         }
 
         val ruleMask = sourceMask

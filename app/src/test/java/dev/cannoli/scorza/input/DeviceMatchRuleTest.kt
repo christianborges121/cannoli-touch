@@ -21,6 +21,35 @@ class DeviceMatchRuleTest {
     }
 
     @Test
+    fun name_and_vendor_product_match_scores_150() {
+        val rule = DeviceMatchRule(
+            name = "Stadia Controller",
+            vendorId = 6353,
+            productId = 37888,
+        )
+        assertEquals(150, rule.score(device))
+    }
+
+    @Test
+    fun descriptor_only_match_scores_30() {
+        val rule = DeviceMatchRule(descriptor = "abcdef")
+        val deviceWithDescriptor = device.copy(descriptor = "abcdef")
+        assertEquals(30, rule.score(deviceWithDescriptor))
+    }
+
+    @Test
+    fun name_plus_vid_pid_beats_descriptor_only_for_same_pad_class() {
+        val rule = DeviceMatchRule(
+            name = "Stadia Controller",
+            vendorId = 6353,
+            productId = 37888,
+            descriptor = "X",
+        )
+        val sameDeviceNewDescriptor = device.copy(descriptor = "Y")
+        assertEquals(150, rule.score(sameDeviceNewDescriptor))
+    }
+
+    @Test
     fun name_only_match_scores_50() {
         val rule = DeviceMatchRule(name = "Stadia Controller")
         assertEquals(50, rule.score(device))
@@ -97,7 +126,7 @@ class DeviceMatchRuleTest {
     }
 
     @Test
-    fun named_rule_matching_second_same_model_pad_still_scores() {
+    fun named_rule_matching_second_same_model_pad_still_scores_150() {
         // Two physically distinct Pro pads share name + VID/PID and have different descriptors.
         // The saved mapping for pad #1 should still win for pad #2 because nothing about the
         // name signals "different device."
@@ -115,9 +144,7 @@ class DeviceMatchRuleTest {
             sourceMask = 0,
             descriptor = "second-pad-descriptor",
         )
-        // No descriptor bonus (different desc), VID/PID match +100, name skipped because VID/PID
-        // matched. Still well above zero.
-        assertEquals(100, rule.score(secondPad))
+        assertEquals(150, rule.score(secondPad))
     }
 
     @Test
@@ -164,13 +191,13 @@ class DeviceMatchRuleTest {
     }
 
     @Test
-    fun rule_score_caps_at_100_plus_10() {
+    fun all_signals_match_scores_name_plus_vid_pid_plus_mask() {
         val rule = DeviceMatchRule(
             name = "Stadia Controller",
             vendorId = 6353,
             productId = 37888,
             sourceMask = 0x00000401,
         )
-        assertEquals(110, rule.score(device))
+        assertEquals(160, rule.score(device))
     }
 }
