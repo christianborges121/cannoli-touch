@@ -24,11 +24,13 @@ class RomScanner(
             ScanLog.write("scanPlatform $tag: no rom dir, cleared ${it.removed}")
         }
         applyRekeys(tag, result.rekeys)
+        // Invalidate before the mtime gate: art lives in a sibling directory the gate
+        // does not watch, so newly added art must refresh even when the ROM tree is unchanged.
+        artwork.invalidate(tag)
         val storedMtime = readLastScannedMtime(tag)
         if (result.rekeys.isEmpty() && storedMtime != MTIME_UNSET && storedMtime == result.mtime) {
             return SyncCounts(0, 0, 0)
         }
-        artwork.invalidate(tag)
         walker.invalidateNameMap(result.tagDir)
         val counts = sync(tag, result.roms)
         writeLastScannedMtime(tag, result.mtime)
