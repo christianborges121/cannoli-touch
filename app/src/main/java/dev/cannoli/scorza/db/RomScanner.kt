@@ -54,7 +54,9 @@ class RomScanner(
     }
 
     fun invalidatePlatform(platformTag: String) {
-        writeLastScannedMtime(platformTag.uppercase(), MTIME_UNSET)
+        val tag = platformTag.uppercase()
+        artwork.invalidate(tag)
+        writeLastScannedMtime(tag, MTIME_UNSET)
     }
 
     fun ensureReservedPlatformTag(tag: String) = ensurePlatformRow(tag)
