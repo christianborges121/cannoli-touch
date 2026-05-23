@@ -132,6 +132,7 @@ class SettingsViewModel @Inject constructor(
         val showUpdate: Boolean = true,
         val swapPlayResume: Boolean = false,
         val mainMenuQuit: Boolean = false,
+        val touchInputEnabled: Boolean = true,
         val retroArchDiyMode: Boolean = true,
         val artWidth: Int = 40,
         val artScale: ArtScale = ArtScale.DEFAULT,
@@ -169,6 +170,7 @@ class SettingsViewModel @Inject constructor(
         showUpdate = settings.showUpdate,
         swapPlayResume = settings.swapPlayResume,
         mainMenuQuit = settings.mainMenuQuit,
+        touchInputEnabled = settings.touchInputEnabled,
         retroArchDiyMode = settings.retroArchDiyMode,
         artWidth = settings.artWidth,
         artScale = settings.artScale,
@@ -231,6 +233,7 @@ class SettingsViewModel @Inject constructor(
         val artWidth: Int,
         val artScale: ArtScale,
         val retroArchDiyMode: Boolean,
+        val touchInputEnabled: Boolean,
         val portraitMarginPx: Int,
     )
 
@@ -413,6 +416,7 @@ class SettingsViewModel @Inject constructor(
             }
             "platform_switching" -> settings.platformSwitching = !settings.platformSwitching
             "swap_play_resume" -> settings.swapPlayResume = !settings.swapPlayResume
+            "touch_input" -> settings.touchInputEnabled = !settings.touchInputEnabled
             "content_mode" -> {
                 val entries = ContentMode.entries
                 val cur = entries.indexOf(settings.contentMode).coerceAtLeast(0)
@@ -609,6 +613,7 @@ class SettingsViewModel @Inject constructor(
         artWidth = settings.artWidth,
         artScale = settings.artScale,
         retroArchDiyMode = settings.retroArchDiyMode,
+        touchInputEnabled = settings.touchInputEnabled,
         portraitMarginPx = settings.portraitMarginPx,
     )
 
@@ -645,6 +650,7 @@ class SettingsViewModel @Inject constructor(
         settings.artWidth = snap.artWidth
         settings.artScale = snap.artScale
         settings.retroArchDiyMode = snap.retroArchDiyMode
+        settings.touchInputEnabled = snap.touchInputEnabled
         settings.portraitMarginPx = snap.portraitMarginPx
     }
 
@@ -762,6 +768,7 @@ class SettingsViewModel @Inject constructor(
         "input" -> listOf(
             SettingsItem("controllers", R.string.setting_controllers, isEditable = true),
             SettingsItem("shortcuts", R.string.setting_shortcuts, isEditable = true),
+            SettingsItem("touch_input", R.string.setting_touch_input, valueRes = onOff(settings.touchInputEnabled)),
             SettingsItem("platform_switching", R.string.setting_platform_switching, valueRes = onOff(settings.platformSwitching)),
             SettingsItem("swap_play_resume", R.string.setting_swap_play_resume, valueRes = onOff(settings.swapPlayResume)),
             SettingsItem("main_menu_quit", R.string.setting_main_menu_quit, valueRes = onOff(settings.mainMenuQuit)),

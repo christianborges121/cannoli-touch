@@ -180,6 +180,10 @@ class SettingsRepository @Inject constructor(@ApplicationContext private val con
         get() = jsonRead { optBoolean(KEY_MAIN_MENU_QUIT, false) }
         set(value) = jsonWrite { put(KEY_MAIN_MENU_QUIT, value) }
 
+    var touchInputEnabled: Boolean
+        get() = jsonRead { optBoolean(KEY_TOUCH_INPUT_ENABLED, true) }
+        set(value) = jsonWrite { put(KEY_TOUCH_INPUT_ENABLED, value) }
+
     var kitchenCodeBypass: Boolean
         get() = jsonRead { optBoolean(KEY_KITCHEN_CODE_BYPASS, false) }
         set(value) = jsonWrite { put(KEY_KITCHEN_CODE_BYPASS, value) }
@@ -378,6 +382,7 @@ class SettingsRepository @Inject constructor(@ApplicationContext private val con
         private const val KEY_PLATFORM_SWITCHING = "platform_switching"
         private const val KEY_SWAP_PLAY_RESUME = "swap_play_resume"
         private const val KEY_MAIN_MENU_QUIT = "main_menu_quit"
+        private const val KEY_TOUCH_INPUT_ENABLED = "touch_input_enabled"
         private const val KEY_KITCHEN_CODE_BYPASS = "kitchen_code_bypass"
         private const val KEY_RETROARCH_DIY_MODE = "retroarch_diy_mode"
         private const val KEY_SHOW_WIFI = "show_wifi"

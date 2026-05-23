@@ -414,7 +414,8 @@ class MainActivity : ComponentActivity(), ActivityActions {
     }
 
     override fun dispatchTouchEvent(event: MotionEvent): Boolean {
-        return true
+        if (!settings.touchInputEnabled) return true
+        return super.dispatchTouchEvent(event)
     }
 
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
