@@ -36,6 +36,7 @@ jobs:
         with:
           ref: ${{ inputs.branch }}
           submodules: recursive
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Download libretro cores
         run: |
