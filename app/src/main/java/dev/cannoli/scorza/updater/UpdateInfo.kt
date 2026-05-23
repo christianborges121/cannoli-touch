@@ -8,5 +8,5 @@ data class UpdateInfo(
     val changelog: String
 ) {
     val downloadUrl: String
-        get() = "https://github.com/CannoliHQ/cannoli/releases/download/$tag/$apk"
+        get() = "https://github.com/christianborges121/cannoli-touch/releases/download/$tag/$apk"
 }
