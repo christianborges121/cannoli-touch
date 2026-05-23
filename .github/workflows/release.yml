@@ -66,6 +66,8 @@ jobs:
           ndk-version: r27c
 
       - uses: oven-sh/setup-bun@v2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build Kitchen frontend
         run: |
@@ -123,6 +125,7 @@ jobs:
       - name: Create release
         uses: softprops/action-gh-release@v2
         with:
+          token: ${{ secrets.GITHUB_TOKEN }}
           tag_name: ${{ steps.version.outputs.tag }}
           name: ${{ steps.version.outputs.tag }}
           body: ${{ inputs.message }}
