@@ -29,6 +29,7 @@ import com.google.zxing.qrcode.QRCodeWriter
 import dev.cannoli.scorza.R
 import dev.cannoli.ui.ButtonStyle
 import dev.cannoli.ui.components.BottomBar
+import dev.cannoli.scorza.input.screen.compose.LocalScreenInputRegistry
 import dev.cannoli.ui.components.screenPadding
 import dev.cannoli.ui.theme.LocalCannoliTypography
 import dev.cannoli.ui.theme.Radius
@@ -109,15 +110,16 @@ fun KitchenOverlay(
             }
         }
 
+        val registry = LocalScreenInputRegistry.current
         BottomBar(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .padding(horizontal = screenPadding, vertical = 16.dp),
             leftItems = buildList {
-                add(buttonStyle.back to stringResource(R.string.label_back))
-                if (urls.size > 1) add("\u25C0\u25B6" to stringResource(R.string.label_interface))
+                add(Triple(buttonStyle.back, stringResource(R.string.label_back), { registry.top.onBack() }))
+                if (urls.size > 1) add(Triple("\u25C0\u25B6", stringResource(R.string.label_interface), { registry.top.onWest() }))
             },
-            rightItems = listOf(buttonStyle.north to stringResource(R.string.label_stop))
+            rightItems = listOf(Triple(buttonStyle.north, stringResource(R.string.label_stop), { registry.top.onNorth() }))
         )
     }
 }

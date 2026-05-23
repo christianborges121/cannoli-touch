@@ -1,5 +1,6 @@
 package dev.cannoli.scorza.ui.components
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -51,6 +52,8 @@ fun DialogOverlay(
     buttonStyle: ButtonStyle = ButtonStyle()
 ) {
     val itemHeight = pillItemHeight(listLineHeight, listVerticalPadding)
+    val registry = dev.cannoli.scorza.input.screen.compose.LocalScreenInputRegistry.current
+    val nav = dev.cannoli.scorza.navigation.LocalNavigation.current
     when (dialogState) {
         is DialogState.ContextMenu -> {
             ListDialogScreen(
@@ -67,7 +70,7 @@ fun DialogOverlay(
                     items = dialogState.options,
                     selectedIndex = dialogState.selectedOption,
                     itemHeight = itemHeight
-                ) { _, option, isSelected ->
+                ) { idx, option, isSelected ->
                     val parts = option.split("\t", limit = 2)
                     if (parts.size == 2) {
                         PillRowKeyValue(
@@ -76,7 +79,11 @@ fun DialogOverlay(
                             isSelected = isSelected,
                             fontSize = listFontSize,
                             lineHeight = listLineHeight,
-                            verticalPadding = listVerticalPadding
+                            verticalPadding = listVerticalPadding,
+                            modifier = Modifier.clickable {
+                                if (!isSelected) nav.dialogState.value = (dialogState as DialogState.ContextMenu).copy(selectedOption = idx)
+                                else registry.top.onConfirm()
+                            }
                         )
                     } else {
                         PillRowText(
@@ -84,7 +91,11 @@ fun DialogOverlay(
                             isSelected = isSelected,
                             fontSize = listFontSize,
                             lineHeight = listLineHeight,
-                            verticalPadding = listVerticalPadding
+                            verticalPadding = listVerticalPadding,
+                            modifier = Modifier.clickable {
+                                if (!isSelected) nav.dialogState.value = (dialogState as DialogState.ContextMenu).copy(selectedOption = idx)
+                                else registry.top.onConfirm()
+                            }
                         )
                     }
                 }
@@ -233,11 +244,23 @@ internal fun ListDialogScreen(
                 Spacer(modifier = Modifier.height(Spacing.Sm))
                 content()
             }
-            val left = if (showBackButton) listOf(buttonStyle.back to stringResource(R.string.label_back)) + leftBottomItems else leftBottomItems
+            val registry = dev.cannoli.scorza.input.screen.compose.LocalScreenInputRegistry.current
+            val leftPairs = if (showBackButton) listOf(buttonStyle.back to stringResource(R.string.label_back)) + leftBottomItems else leftBottomItems
+            val mapPair: (Pair<String, String>) -> Triple<String, String, (() -> Unit)?> = { p ->
+                val (btn, lbl) = p
+                val handler: (() -> Unit)? = when (btn) {
+                    buttonStyle.back -> { { registry.top.onBack() } }
+                    buttonStyle.confirm -> { { registry.top.onConfirm() } }
+                    buttonStyle.north -> { { registry.top.onNorth() } }
+                    buttonStyle.west -> { { registry.top.onWest() } }
+                    else -> null
+                }
+                Triple(btn, lbl, handler)
+            }
             BottomBar(
                 modifier = Modifier.align(Alignment.BottomCenter),
-                leftItems = left,
-                rightItems = rightBottomItems
+                leftItems = leftPairs.map(mapPair),
+                rightItems = rightBottomItems.map(mapPair)
             )
         }
     }

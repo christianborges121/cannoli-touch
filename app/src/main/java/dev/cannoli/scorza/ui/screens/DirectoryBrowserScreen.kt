@@ -8,6 +8,10 @@ import dev.cannoli.scorza.R
 import dev.cannoli.scorza.ui.components.ListDialogScreen
 import dev.cannoli.ui.ButtonStyle
 import dev.cannoli.ui.components.List
+import dev.cannoli.scorza.input.screen.compose.LocalScreenInputRegistry
+import dev.cannoli.scorza.navigation.LauncherScreen
+import dev.cannoli.scorza.navigation.LocalNavigation
+import dev.cannoli.scorza.navigation.BrowsePurpose
 import dev.cannoli.ui.components.PillRowText
 
 @Composable
@@ -26,6 +30,7 @@ fun DirectoryBrowserScreen(
     showSelectOption: Boolean = true,
     showNewFolder: Boolean = true,
     onListStateChanged: ((androidx.compose.foundation.lazy.LazyListState?) -> Unit)?,
+    onItemClicked: ((Int) -> Unit)? = null,
     buttonStyle: ButtonStyle
 ) {
     val displayItems = if (showSelectOption) listOf(stringResource(R.string.label_use_location)) + entries else entries
@@ -54,20 +59,34 @@ fun DirectoryBrowserScreen(
         rightBottomItems = rightItems,
         buttonStyle = buttonStyle
     ) {
+        val registry = LocalScreenInputRegistry.current
+        val nav = LocalNavigation.current
         List(
-            items = displayItems,
-            selectedIndex = selectedIndex,
-            itemHeight = itemHeight,
-            scrollTarget = scrollTarget,
-            onListStateChanged = onListStateChanged
-        ) { _, item, isSelected ->
-            PillRowText(
-                label = item,
-                isSelected = isSelected,
-                fontSize = listFontSize,
-                lineHeight = listLineHeight,
-                verticalPadding = listVerticalPadding
-            )
-        }
+                items = displayItems,
+                selectedIndex = selectedIndex,
+                itemHeight = itemHeight,
+                scrollTarget = scrollTarget,
+                onListStateChanged = onListStateChanged
+            ) { idx, item, isSelected ->
+                PillRowText(
+                    label = item,
+                    isSelected = isSelected,
+                    fontSize = listFontSize,
+                    lineHeight = listLineHeight,
+                    verticalPadding = listVerticalPadding,
+                    modifier = Modifier.clickable {
+                        if (!isSelected) {
+                            if (onItemClicked != null) onItemClicked(idx) else {
+                                // fallback: try to replace top if possible
+                                try {
+                                    nav.replaceTop(LauncherScreen.DirectoryBrowser(BrowsePurpose.FILES, currentPath = currentPath, entries = entries, selectedIndex = idx, scrollTarget = scrollTarget))
+                                } catch (_: Exception) {
+                                    // ignore if we can't reconstruct
+                                }
+                            }
+                        } else registry.top.onConfirm()
+                    }
+                )
+            }
     }
 }

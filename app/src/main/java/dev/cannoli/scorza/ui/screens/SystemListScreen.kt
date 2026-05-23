@@ -24,6 +24,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
+import androidx.compose.foundation.clickable
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.FilterQuality
@@ -76,6 +78,10 @@ fun SystemListScreen(
     swapPlayResume: Boolean = false,
     fiveGameHandheld: Boolean = false,
     buttonStyle: ButtonStyle = ButtonStyle(),
+    onConfirm: (() -> Unit)? = null,
+    onSettings: (() -> Unit)? = null,
+    onQuit: (() -> Unit)? = null,
+    onKitchen: (() -> Unit)? = null,
 ) {
     val state by viewModel.state.collectAsState()
     val itemHeight = pillItemHeight(listLineHeight, listVerticalPadding)
@@ -194,7 +200,7 @@ fun SystemListScreen(
                             is ListItem.PortsFolder -> "ports"
                         }
                     }
-                ) { _, item, isSelected ->
+                ) { index, item, isSelected ->
                     val label = when (item) {
                         is ListItem.RecentlyPlayedItem -> recentlyPlayedLabel
                         is ListItem.FavoritesItem -> favoritesLabel
@@ -221,6 +227,9 @@ fun SystemListScreen(
                         verticalPadding = listVerticalPadding,
                         showReorderIcon = showReorder,
                         tagSuffix = tagSuffix,
+                        modifier = Modifier.clickable {
+                            if (!isSelected) viewModel.setSelectedIndex(index) else onConfirm?.invoke()
+                        }
                     )
                 }
                 }
@@ -269,27 +278,28 @@ fun SystemListScreen(
                 } else {
                     buildList {
                         if (hasResumeState && swapPlayResume) {
-                            add(buttonStyle.north to playLabel)
-                            add(buttonStyle.confirm to resumeLabel)
+                            add(Triple(buttonStyle.north, playLabel, null))
+                            add(Triple(buttonStyle.confirm, resumeLabel, { onConfirm?.invoke() }))
                         } else {
                             if (hasResumeState) add(buttonStyle.north to resumeLabel)
-                            add(buttonStyle.confirm to playLabel)
+                            add(Triple(buttonStyle.north, resumeLabel, { onConfirm?.invoke() }))
+                            add(Triple(buttonStyle.confirm, playLabel, { onConfirm?.invoke() }))
                         }
                     }
                 }
             } else if (state.items.isEmpty()) {
-                listOf(buttonStyle.west to stringResource(R.string.label_kitchen))
+                listOf(Triple(buttonStyle.west, stringResource(R.string.label_kitchen), { onKitchen?.invoke() }))
             } else if (kitchenRunning) {
-                listOf(buttonStyle.west to stringResource(R.string.label_kitchen), buttonStyle.confirm to stringResource(R.string.label_select))
+                listOf(Triple(buttonStyle.west, stringResource(R.string.label_kitchen), { onKitchen?.invoke() }), Triple(buttonStyle.confirm, stringResource(R.string.label_select), { onConfirm?.invoke() }))
             } else {
-                listOf(buttonStyle.confirm to stringResource(R.string.label_select))
+                listOf(Triple(buttonStyle.confirm, stringResource(R.string.label_select), { onConfirm?.invoke() }))
             }
             val leftItems = buildList {
                 if (mainMenuQuit) add(buttonStyle.back to stringResource(R.string.label_quit))
                 if (fiveGameHandheld) {
-                    add(buttonStyle.west to stringResource(R.string.label_settings))
+                    add(Triple(buttonStyle.west, stringResource(R.string.label_settings), { onSettings?.invoke() }))
                 } else {
-                    add(buttonStyle.north to stringResource(R.string.label_settings))
+                    add(Triple(buttonStyle.north, stringResource(R.string.label_settings), { onSettings?.invoke() }))
                 }
             }
             BottomBar(

@@ -23,6 +23,7 @@ import dev.cannoli.scorza.BuildConfig
 import dev.cannoli.scorza.R
 import dev.cannoli.ui.ButtonStyle
 import dev.cannoli.ui.components.BottomBar
+import dev.cannoli.scorza.input.screen.compose.LocalScreenInputRegistry
 import dev.cannoli.ui.components.screenPadding
 import dev.cannoli.ui.theme.LocalCannoliTypography
 import dev.cannoli.ui.theme.Spacing
@@ -79,14 +80,15 @@ fun AboutOverlay(statusMessage: String? = null, updateAvailable: Boolean = false
                 )
             }
         }
+        val registry = LocalScreenInputRegistry.current
         BottomBar(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .padding(screenPadding),
-            leftItems = listOf(buttonStyle.back to stringResource(R.string.label_back)),
+            leftItems = listOf(Triple(buttonStyle.back, stringResource(R.string.label_back), { registry.top.onBack() })),
             rightItems = buildList {
-                if (updateAvailable) add(buttonStyle.west to stringResource(R.string.label_update))
-                add(buttonStyle.north to stringResource(R.string.label_credits))
+                if (updateAvailable) add(Triple(buttonStyle.west, stringResource(R.string.label_update), { registry.top.onWest() }))
+                add(Triple(buttonStyle.north, stringResource(R.string.label_credits), { registry.top.onNorth() }))
             }
         )
     }

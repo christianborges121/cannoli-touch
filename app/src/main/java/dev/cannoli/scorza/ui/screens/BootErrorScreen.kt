@@ -17,6 +17,7 @@ import androidx.compose.ui.unit.sp
 import dev.cannoli.scorza.R
 import dev.cannoli.ui.ButtonStyle
 import dev.cannoli.ui.components.BottomBar
+import dev.cannoli.scorza.input.screen.compose.LocalScreenInputRegistry
 import dev.cannoli.ui.components.ScreenBackground
 import dev.cannoli.ui.components.ScreenTitle
 import dev.cannoli.ui.components.footerReservation
@@ -43,10 +44,11 @@ fun BootErrorScreen(
                     modifier = Modifier.widthIn(max = 560.dp),
                 )
             }
+            val registry = LocalScreenInputRegistry.current
             BottomBar(
                 modifier = Modifier.align(Alignment.BottomCenter),
                 leftItems = emptyList(),
-                rightItems = listOf(buttonStyle.confirm to stringResource(R.string.update_retry)),
+                rightItems = listOf(Triple(buttonStyle.confirm, stringResource(R.string.update_retry), { registry.top.onConfirm() })),
             )
         }
     }

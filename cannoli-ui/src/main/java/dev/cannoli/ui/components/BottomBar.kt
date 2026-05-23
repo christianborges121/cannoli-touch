@@ -1,6 +1,7 @@
 package dev.cannoli.ui.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -24,7 +25,7 @@ import dev.cannoli.ui.theme.LocalScaleFactor
 import dev.cannoli.ui.theme.Radius
 
 @Composable
-fun LegendPill(button: String, label: String) {
+fun LegendPill(button: String, label: String, onClick: (() -> Unit)? = null) {
     val accent = LocalCannoliColors.current.accent
     val outerPill = accent.copy(alpha = 0.15f)
     val innerPill = accent.copy(alpha = 0.30f)
@@ -32,6 +33,7 @@ fun LegendPill(button: String, label: String) {
 
     Row(
         modifier = Modifier
+            .then(if (onClick != null) Modifier.clickable { onClick() } else Modifier)
             .clip(Radius.Pill)
             .background(outerPill)
             .padding(start = (5 * sf).dp, end = (14 * sf).dp, top = (6 * sf).dp, bottom = (6 * sf).dp),
@@ -83,8 +85,8 @@ fun LegendPill(button: String, label: String) {
 @Composable
 fun BottomBar(
     modifier: Modifier = Modifier,
-    leftItems: List<Pair<String, String>>,
-    rightItems: List<Pair<String, String>>
+    leftItems: List<Triple<String, String, (() -> Unit)?>>,
+    rightItems: List<Triple<String, String, (() -> Unit)?>>
 ) {
     val sf = LocalScaleFactor.current
     Row(
@@ -93,17 +95,30 @@ fun BottomBar(
         verticalAlignment = Alignment.CenterVertically
     ) {
         Row(horizontalArrangement = Arrangement.spacedBy((8 * sf).dp)) {
-            leftItems.forEach { (button, label) ->
-                LegendPill(button = button, label = label)
+            leftItems.forEach { (button, label, onClick) ->
+                LegendPill(button = button, label = label, onClick = onClick)
             }
         }
 
         Spacer(modifier = Modifier.weight(1f))
 
         Row(horizontalArrangement = Arrangement.spacedBy((8 * sf).dp)) {
-            rightItems.forEach { (button, label) ->
-                LegendPill(button = button, label = label)
+            rightItems.forEach { (button, label, onClick) ->
+                LegendPill(button = button, label = label, onClick = onClick)
             }
         }
     }
+}
+
+// Backwards-compatible overload for callers that supply Pair<String,String>
+fun BottomBar(
+    modifier: Modifier = Modifier,
+    leftItems: List<Pair<String, String>>,
+    rightItems: List<Pair<String, String>>
+) {
+    BottomBar(
+        modifier = modifier,
+        leftItems = leftItems.map { Triple(it.first, it.second, null) },
+        rightItems = rightItems.map { Triple(it.first, it.second, null) }
+    )
 }

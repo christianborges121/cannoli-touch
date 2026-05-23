@@ -198,12 +198,13 @@ fun LibretroScreen(
                                 )
                             }
                         }
+                        val registry = dev.cannoli.scorza.input.screen.compose.LocalScreenInputRegistry.current
                         BottomBar(
                             modifier = Modifier
                                 .align(Alignment.BottomCenter)
                                 .padding(screenPadding),
-                            leftItems = listOf(labels.back to stringResource(R.string.label_cancel)),
-                            rightItems = listOf(labels.north to stringResource(R.string.label_delete))
+                            leftItems = listOf(Triple(labels.back, stringResource(R.string.label_cancel), { registry.top.onBack() })),
+                            rightItems = listOf(Triple(labels.north, stringResource(R.string.label_delete), { registry.top.onNorth() }))
                         )
                     }
                 }
@@ -339,9 +340,10 @@ fun LibretroScreen(
                                 }
                             }
                         }
+                        val registry = dev.cannoli.scorza.input.screen.compose.LocalScreenInputRegistry.current
                         BottomBar(
                             modifier = Modifier.align(Alignment.BottomCenter),
-                            leftItems = listOf(labels.back to stringResource(R.string.label_back)),
+                            leftItems = listOf(Triple(labels.back, stringResource(R.string.label_back), { registry.top.onBack() })),
                             rightItems = emptyList()
                         )
                     }
@@ -469,9 +471,10 @@ fun LibretroScreen(
                                 )
                             )
                         }
+                        val registry = dev.cannoli.scorza.input.screen.compose.LocalScreenInputRegistry.current
                         BottomBar(
                             modifier = Modifier.align(Alignment.BottomCenter),
-                            leftItems = listOf(labels.back to stringResource(R.string.label_back)),
+                            leftItems = listOf(Triple(labels.back, stringResource(R.string.label_back), { registry.top.onBack() })),
                             rightItems = emptyList()
                         )
                     }

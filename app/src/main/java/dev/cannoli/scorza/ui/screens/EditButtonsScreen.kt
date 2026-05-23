@@ -32,6 +32,8 @@ import dev.cannoli.scorza.navigation.LauncherScreen
 import dev.cannoli.ui.ButtonStyle
 import dev.cannoli.ui.ELLIPSIS
 import dev.cannoli.ui.components.BottomBar
+import dev.cannoli.scorza.input.screen.compose.LocalScreenInputRegistry
+import dev.cannoli.scorza.navigation.LocalNavigation
 import dev.cannoli.ui.components.List
 import dev.cannoli.ui.components.PillRowKeyValue
 import dev.cannoli.ui.components.ScreenBackground
@@ -118,12 +120,14 @@ fun EditButtonsScreen(
                     lineHeight = listLineHeight,
                 )
                 Spacer(modifier = Modifier.height(Spacing.Sm))
+                val registry = LocalScreenInputRegistry.current
+                val nav = LocalNavigation.current
                 List(
                     items = entries,
                     selectedIndex = screen.selectedIndex.coerceIn(0, entries.size - 1),
                     itemHeight = itemHeight,
                     scrollTarget = screen.scrollTarget,
-                ) { _, canonical, isSelected ->
+                ) { idx, canonical, isSelected ->
                     val rowListening = screen.listeningCanonical == canonical
                     val bindings = mapping.bindings[canonical].orEmpty()
                     val value = when {
@@ -138,6 +142,10 @@ fun EditButtonsScreen(
                         fontSize = listFontSize,
                         lineHeight = listLineHeight,
                         verticalPadding = listVerticalPadding,
+                        modifier = Modifier.clickable {
+                            if (!isSelected) nav.replaceTop(screen.withScroll(selectedIndex = idx, scrollTarget = screen.scrollTarget))
+                            else registry.top.onConfirm()
+                        }
                     )
                 }
             }
@@ -157,10 +165,15 @@ fun EditButtonsScreen(
                 }
             }
 
+            val registry = LocalScreenInputRegistry.current
             BottomBar(
                 modifier = Modifier.align(Alignment.BottomCenter),
-                leftItems = bottomLeft,
-                rightItems = bottomRight,
+                leftItems = bottomLeft.map { Triple(it.first, it.second, if (it.first == buttonStyle.back) ({ registry.top.onBack() }) else null) },
+                rightItems = bottomRight.map { Pair -> Triple(Pair.first, Pair.second, when (Pair.first) {
+                    buttonStyle.north -> { { registry.top.onNorth() } }
+                    buttonStyle.confirm -> { { registry.top.onConfirm() } }
+                    else -> null
+                }) }
             )
         }
 

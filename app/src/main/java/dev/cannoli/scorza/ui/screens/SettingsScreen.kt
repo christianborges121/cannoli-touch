@@ -25,6 +25,7 @@ import dev.cannoli.ui.components.BottomBar
 import dev.cannoli.ui.components.List
 import dev.cannoli.ui.components.PillRowKeyValue
 import dev.cannoli.ui.components.PillRowText
+import dev.cannoli.scorza.input.screen.compose.LocalScreenInputRegistry
 import dev.cannoli.ui.components.ScreenBackground
 import dev.cannoli.ui.components.ScreenTitle
 import dev.cannoli.ui.components.footerReservation
@@ -95,7 +96,11 @@ fun SettingsScreen(
                             isSelected = isSelected,
                             fontSize = listFontSize,
                             lineHeight = listLineHeight,
-                            verticalPadding = listVerticalPadding
+                            verticalPadding = listVerticalPadding,
+                            modifier = Modifier.clickable {
+                                val registry = LocalScreenInputRegistry.current
+                                if (!isSelected) viewModel.setSelectedIndex(state.items.indexOf(item)) else registry.top.onConfirm()
+                            }
                         )
                     }
                 }
@@ -129,10 +134,19 @@ fun SettingsScreen(
             } else {
                 emptyList()
             }
+            val registry = LocalScreenInputRegistry.current
             BottomBar(
                 modifier = Modifier.align(Alignment.BottomCenter),
-                leftItems = leftItems,
-                rightItems = rightItems
+                leftItems = leftItems.map { Pair -> Triple(Pair.first, Pair.second, when (Pair.first) {
+                    buttonStyle.back -> { { registry.top.onBack() } }
+                    DPAD_HORIZONTAL -> { { registry.top.onWest() } }
+                    else -> null
+                }) },
+                rightItems = rightItems.map { Pair -> Triple(Pair.first, Pair.second, when (Pair.first) {
+                    buttonStyle.confirm -> { { registry.top.onConfirm() } }
+                    buttonStyle.north -> { { registry.top.onNorth() } }
+                    else -> null
+                }) }
             )
         } else {
             Column(
@@ -158,15 +172,20 @@ fun SettingsScreen(
                         isSelected = isSelected,
                         fontSize = listFontSize,
                         lineHeight = listLineHeight,
-                        verticalPadding = listVerticalPadding
+                        verticalPadding = listVerticalPadding,
+                        modifier = Modifier.clickable {
+                            val registry = LocalScreenInputRegistry.current
+                            if (!isSelected) viewModel.setCategoryIndex(state.categories.indexOf(category)) else registry.top.onConfirm()
+                        }
                     )
                 }
             }
 
+            val registry = LocalScreenInputRegistry.current
             BottomBar(
                 modifier = Modifier.align(Alignment.BottomCenter),
-                leftItems = listOf(buttonStyle.back to stringResource(R.string.label_back)),
-                rightItems = listOf(buttonStyle.confirm to stringResource(R.string.label_select))
+                leftItems = listOf(Triple(buttonStyle.back, stringResource(R.string.label_back), { registry.top.onBack() })),
+                rightItems = listOf(Triple(buttonStyle.confirm, stringResource(R.string.label_select), { registry.top.onConfirm() }))
             )
         }
     }

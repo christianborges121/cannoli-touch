@@ -33,6 +33,8 @@ import dev.cannoli.ui.ButtonStyle
 import dev.cannoli.ui.DPAD_HORIZONTAL
 import dev.cannoli.ui.START_GLYPH
 import dev.cannoli.ui.components.BottomBar
+import dev.cannoli.scorza.input.screen.compose.LocalScreenInputRegistry
+import dev.cannoli.scorza.navigation.LocalNavigation
 import dev.cannoli.ui.components.footerReservation
 import dev.cannoli.ui.components.screenPadding
 import dev.cannoli.ui.theme.CannoliTypography
@@ -88,32 +90,42 @@ fun OnboardingPermissionsScreen(
             )
             Spacer(modifier = Modifier.height(Spacing.Lg))
 
+            val registry = LocalScreenInputRegistry.current
+            val nav = LocalNavigation.current
             permissions.forEachIndexed { index, perm ->
                 if (index > 0) Spacer(modifier = Modifier.height(Spacing.Md))
-                PermissionCard(
-                    label = stringResource(R.string.onboarding_storage_label),
-                    rationale = stringResource(R.string.onboarding_storage_rationale),
-                    isGranted = perm in granted,
-                    isFocused = index == selectedIndex,
-                    accent = accent,
-                    typo = typo,
-                )
+                Box(modifier = Modifier.clickable {
+                    nav.replaceTop(LauncherScreen.OnboardingPermissions(permissions = permissions, granted = granted, volumes = volumes, volumeIndex = volumeIndex, customPath = customPath, selectedIndex = index))
+                }) {
+                    PermissionCard(
+                        label = stringResource(R.string.onboarding_storage_label),
+                        rationale = stringResource(R.string.onboarding_storage_rationale),
+                        isGranted = perm in granted,
+                        isFocused = index == selectedIndex,
+                        accent = accent,
+                        typo = typo,
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.height(Spacing.Md))
 
-            StorageCard(
-                value = when {
-                    isCustom && customPath != null -> customPath
-                    isCustom -> stringResource(R.string.setup_folder_unset)
-                    else -> selectedVolume?.first ?: stringResource(R.string.setup_folder_unset)
-                },
-                isLocked = !allGranted,
-                isFocused = isStorageRowFocused,
-                customPickPrompt = isStorageRowFocused && isCustom && customPath == null,
-                accent = accent,
-                typo = typo,
-            )
+            Box(modifier = Modifier.clickable {
+                nav.replaceTop(LauncherScreen.OnboardingPermissions(permissions = permissions, granted = granted, volumes = volumes, volumeIndex = volumeIndex, customPath = customPath, selectedIndex = storageRowIndex))
+            }) {
+                StorageCard(
+                    value = when {
+                        isCustom && customPath != null -> customPath
+                        isCustom -> stringResource(R.string.setup_folder_unset)
+                        else -> selectedVolume?.first ?: stringResource(R.string.setup_folder_unset)
+                    },
+                    isLocked = !allGranted,
+                    isFocused = isStorageRowFocused,
+                    customPickPrompt = isStorageRowFocused && isCustom && customPath == null,
+                    accent = accent,
+                    typo = typo,
+                )
+            }
         }
 
         val leftItems = mutableListOf(buttonStyle.back to stringResource(R.string.label_quit))
@@ -132,10 +144,11 @@ fun OnboardingPermissionsScreen(
         if (continueEnabled) {
             rightItems.add(START_GLYPH to stringResource(R.string.label_continue))
         }
+        val registry = LocalScreenInputRegistry.current
         BottomBar(
             modifier = Modifier.align(Alignment.BottomCenter),
-            leftItems = leftItems,
-            rightItems = rightItems,
+            leftItems = leftItems.map { Triple(it.first, it.second, if (it.first == buttonStyle.back) ({ registry.top.onBack() }) else if (it.first == DPAD_HORIZONTAL) ({ registry.top.onWest() }) else null) },
+            rightItems = rightItems.map { Triple(it.first, it.second, if (it.first == buttonStyle.confirm) ({ registry.top.onConfirm() }) else if (it.first == START_GLYPH) ({ registry.top.onStart() }) else null) },
         )
     }
 }

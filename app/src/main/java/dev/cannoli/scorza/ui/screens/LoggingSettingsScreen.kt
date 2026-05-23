@@ -20,6 +20,8 @@ import dev.cannoli.scorza.util.LoggingPrefs
 import dev.cannoli.ui.ButtonStyle
 import dev.cannoli.ui.DPAD_HORIZONTAL
 import dev.cannoli.ui.components.BottomBar
+import dev.cannoli.scorza.input.screen.compose.LocalScreenInputRegistry
+import dev.cannoli.scorza.navigation.LocalNavigation
 import dev.cannoli.ui.components.List
 import dev.cannoli.ui.components.PillRowKeyValue
 import dev.cannoli.ui.components.ScreenBackground
@@ -52,12 +54,14 @@ fun LoggingSettingsScreen(
                     lineHeight = listLineHeight,
                 )
                 Spacer(modifier = Modifier.height(Spacing.Sm))
+                val registry = LocalScreenInputRegistry.current
+                val nav = LocalNavigation.current
                 List(
                     items = categories,
                     selectedIndex = screen.selectedIndex.coerceIn(0, categories.size - 1),
                     itemHeight = itemHeight,
                     scrollTarget = screen.scrollTarget,
-                ) { _, category, isSelected ->
+                ) { idx, category, isSelected ->
                     PillRowKeyValue(
                         label = labelFor(category),
                         value = if (LoggingPrefs.isEnabled(category)) stringResource(R.string.value_on)
@@ -66,15 +70,17 @@ fun LoggingSettingsScreen(
                         fontSize = listFontSize,
                         lineHeight = listLineHeight,
                         verticalPadding = listVerticalPadding,
+                        modifier = Modifier.clickable {
+                            if (!isSelected) nav.replaceTop(screen.withScroll(selectedIndex = idx, scrollTarget = screen.scrollTarget))
+                            else registry.top.onConfirm()
+                        }
                     )
                 }
             }
+            val registry = LocalScreenInputRegistry.current
             BottomBar(
                 modifier = Modifier.align(Alignment.BottomCenter),
-                leftItems = listOf(
-                    buttonStyle.back to stringResource(R.string.label_back),
-                    DPAD_HORIZONTAL to stringResource(R.string.label_toggle),
-                ),
+                leftItems = listOf(Triple(buttonStyle.back, stringResource(R.string.label_back), { registry.top.onBack() }), Triple(DPAD_HORIZONTAL, stringResource(R.string.label_toggle), { registry.top.onWest() })),
                 rightItems = emptyList(),
             )
         }

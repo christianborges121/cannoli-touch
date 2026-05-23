@@ -51,6 +51,7 @@ import dev.cannoli.ui.components.MessageOverlay
 import dev.cannoli.ui.components.MissingAppDialog
 import dev.cannoli.ui.components.MissingCoreDialog
 import dev.cannoli.ui.components.PillRowText
+import dev.cannoli.scorza.input.screen.compose.LocalScreenInputRegistry
 import dev.cannoli.ui.components.ScreenBackground
 import dev.cannoli.ui.components.ScreenTitle
 import dev.cannoli.ui.components.footerReservation
@@ -235,6 +236,10 @@ fun GameListScreen(
                                     showReorderIcon = state.reorderMode && isSelected,
                                     checkState = if (state.multiSelectMode && item.isLeafSelectable) index in state.checkedIndices else null,
                                     tagSuffix = tagSuffix,
+                                    modifier = Modifier.clickable {
+                                        val registry = LocalScreenInputRegistry.current
+                                        if (!isSelected) viewModel.setSelectedIndex(index) else registry.top.onConfirm()
+                                    }
                                 )
                             }
                         }
@@ -280,20 +285,21 @@ fun GameListScreen(
             }
             val resumeLabel = stringResource(R.string.label_resume)
             val showNewButton = state.isCollectionsList || state.isCollection
+            val registry = LocalScreenInputRegistry.current
             val leftItems = buildList {
-                add(buttonStyle.back to stringResource(R.string.label_back))
-                if (showNewButton) add(buttonStyle.west to stringResource(R.string.label_new))
+                add(Triple(buttonStyle.back, stringResource(R.string.label_back), { registry.top.onBack() }))
+                if (showNewButton) add(Triple(buttonStyle.west, stringResource(R.string.label_new), { registry.top.onWest() }))
             }
             val rightItems = if (state.items.isEmpty()) {
                 emptyList()
             } else if (state.multiSelectMode) {
-                listOf(buttonStyle.confirm to actionLabel, START_GLYPH to stringResource(R.string.label_confirm))
+                listOf(Triple(buttonStyle.confirm, actionLabel, { registry.top.onConfirm() }), Triple(START_GLYPH, stringResource(R.string.label_confirm), { registry.top.onStart() }))
             } else if (hasResumeState && swapPlayResume) {
-                listOf(buttonStyle.north to actionLabel, buttonStyle.confirm to resumeLabel)
+                listOf(Triple(buttonStyle.north, actionLabel, { registry.top.onNorth() }), Triple(buttonStyle.confirm, resumeLabel, { registry.top.onConfirm() }))
             } else {
                 buildList {
-                    if (hasResumeState) add(buttonStyle.north to resumeLabel)
-                    add(buttonStyle.confirm to actionLabel)
+                    if (hasResumeState) add(Triple(buttonStyle.north, resumeLabel, { registry.top.onNorth() }))
+                    add(Triple(buttonStyle.confirm, actionLabel, { registry.top.onConfirm() }))
                 }
             }
             BottomBar(

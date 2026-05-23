@@ -113,7 +113,8 @@ fun PillRowText(
     verticalPadding: Dp,
     showReorderIcon: Boolean = false,
     checkState: Boolean? = null,
-    tagSuffix: String? = null
+    tagSuffix: String? = null,
+    modifier: Modifier = Modifier
 ) {
     val colors = LocalCannoliColors.current
     val baseStyle = MaterialTheme.typography.bodyLarge
@@ -125,7 +126,7 @@ fun PillRowText(
     val scrollState = rememberScrollState()
     MarqueeEffect(scrollState, isSelected, key = label to isSelected)
 
-    PillRow(isSelected = isSelected, verticalPadding = verticalPadding, lineHeight = lineHeight) {
+    PillRow(isSelected = isSelected, verticalPadding = verticalPadding, lineHeight = lineHeight, modifier = modifier) {
         BoxWithConstraints {
             val viewportMax = this.maxWidth
             Row(verticalAlignment = Alignment.CenterVertically) {

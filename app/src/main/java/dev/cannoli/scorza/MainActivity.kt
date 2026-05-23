@@ -200,6 +200,7 @@ class MainActivity : ComponentActivity(), ActivityActions {
                     CompositionLocalProvider(
                         LocalPortraitMargin provides PortraitMarginState(marginPx = settings.portraitMarginPx),
                         dev.cannoli.scorza.input.screen.compose.LocalScreenInputRegistry provides screenInputRegistry,
+                        dev.cannoli.scorza.navigation.LocalNavigation provides nav,
                     ) {
                     when (val s = boot) {
                         is BootState.Resolving -> Box(modifier = Modifier.fillMaxSize()) {}

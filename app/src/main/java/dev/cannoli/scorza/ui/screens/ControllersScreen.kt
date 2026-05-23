@@ -24,6 +24,8 @@ import dev.cannoli.scorza.ui.viewmodel.ConnectedRow
 import dev.cannoli.scorza.ui.viewmodel.ControllersViewModel
 import dev.cannoli.ui.ButtonStyle
 import dev.cannoli.ui.components.BottomBar
+import dev.cannoli.scorza.input.screen.compose.LocalScreenInputRegistry
+import dev.cannoli.scorza.navigation.LocalNavigation
 import dev.cannoli.ui.components.HintRow
 import dev.cannoli.ui.components.List
 import dev.cannoli.ui.components.PillRowKeyValue
@@ -104,11 +106,13 @@ fun ControllersScreen(
                     lineHeight = listLineHeight,
                 )
                 Spacer(modifier = Modifier.height(Spacing.Sm))
+                val registry = LocalScreenInputRegistry.current
+                val nav = LocalNavigation.current
                 List(
                     items = entries,
                     selectedIndex = highlightedEntryIndex,
                     itemHeight = itemHeight,
-                ) { index, entry, isSelected ->
+                ) { idx, entry, isSelected ->
                     when (entry) {
                         is ControllersListEntry.Header -> SectionHeader(
                             text = entry.label,
@@ -135,6 +139,11 @@ fun ControllersScreen(
                                 fontSize = listFontSize,
                                 lineHeight = listLineHeight,
                                 verticalPadding = listVerticalPadding,
+                                modifier = Modifier.clickable {
+                                    val selPos = selectableIndices.indexOf(idx)
+                                    if (selPos >= 0) nav.replaceTop(screen.withScroll(selectedIndex = selPos, scrollTarget = screen.scrollTarget))
+                                    else registry.top.onConfirm()
+                                }
                             )
                         }
                         is ControllersListEntry.SavedItem -> PillRowText(
@@ -143,6 +152,11 @@ fun ControllersScreen(
                             fontSize = listFontSize,
                             lineHeight = listLineHeight,
                             verticalPadding = listVerticalPadding,
+                            modifier = Modifier.clickable {
+                                val selPos = selectableIndices.indexOf(idx)
+                                if (selPos >= 0) nav.replaceTop(screen.withScroll(selectedIndex = selPos, scrollTarget = screen.scrollTarget))
+                                else registry.top.onConfirm()
+                            }
                         )
                     }
                 }
@@ -150,9 +164,9 @@ fun ControllersScreen(
 
             BottomBar(
                 modifier = Modifier.align(Alignment.BottomCenter),
-                leftItems = listOf(buttonStyle.back to stringResource(R.string.label_back)),
+                leftItems = listOf(Triple(buttonStyle.back, stringResource(R.string.label_back), { registry.top.onBack() })),
                 rightItems = if (highlightedEntryIndex >= 0)
-                    listOf(buttonStyle.confirm to stringResource(R.string.label_select))
+                    listOf(Triple(buttonStyle.confirm, stringResource(R.string.label_select), { registry.top.onConfirm() }))
                 else emptyList()
             )
         }

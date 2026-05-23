@@ -23,6 +23,8 @@ import dev.cannoli.scorza.navigation.LauncherScreen
 import dev.cannoli.ui.ButtonStyle
 import dev.cannoli.ui.DPAD_HORIZONTAL
 import dev.cannoli.ui.components.BottomBar
+import dev.cannoli.scorza.input.screen.compose.LocalScreenInputRegistry
+import dev.cannoli.scorza.navigation.LocalNavigation
 import dev.cannoli.ui.components.List
 import dev.cannoli.ui.components.PillRow
 import dev.cannoli.ui.components.PillRowKeyValue
@@ -138,11 +140,13 @@ fun ControllerDetailScreen(
                     lineHeight = listLineHeight,
                 )
                 Spacer(modifier = Modifier.height(Spacing.Sm))
+                val registry = LocalScreenInputRegistry.current
+                val nav = LocalNavigation.current
                 List(
                     items = entries,
                     selectedIndex = screen.selectedIndex.coerceIn(0, entries.size - 1),
                     itemHeight = itemHeight,
-                ) { _, entry, isSelected ->
+                ) { idx, entry, isSelected ->
                     when (entry) {
                         is ControllerDetailEntry.KeyValue -> PillRowKeyValue(
                             label = entry.label,
@@ -151,6 +155,10 @@ fun ControllerDetailScreen(
                             fontSize = listFontSize,
                             lineHeight = listLineHeight,
                             verticalPadding = listVerticalPadding,
+                            modifier = Modifier.clickable {
+                                if (!isSelected) nav.replaceTop(screen.withScroll(selectedIndex = idx, scrollTarget = screen.scrollTarget))
+                                else registry.top.onConfirm()
+                            },
                         )
                         is ControllerDetailEntry.Editable -> PillRowKeyValue(
                             label = entry.label,
@@ -190,10 +198,11 @@ fun ControllerDetailScreen(
             }
             val rightItems = listOf(buttonStyle.confirm to stringResource(confirmLabel))
 
+            val registry = LocalScreenInputRegistry.current
             BottomBar(
                 modifier = Modifier.align(Alignment.BottomCenter),
-                leftItems = leftItems,
-                rightItems = rightItems
+                leftItems = leftItems.map { Triple(it.first, it.second, if (it.first == buttonStyle.back) ({ registry.top.onBack() }) else null) },
+                rightItems = rightItems.map { Triple(it.first, it.second, if (it.first == buttonStyle.confirm) ({ registry.top.onConfirm() }) else null) }
             )
         }
     }
