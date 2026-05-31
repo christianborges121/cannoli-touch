@@ -1,6 +1,8 @@
 package dev.cannoli.scorza.ui.components
 
+import androidx.compose.foundation.clickable
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
@@ -61,7 +63,8 @@ fun CreditsOverlay(
     listFontSize: TextUnit,
     listLineHeight: TextUnit,
     listVerticalPadding: Dp,
-    onListStateChanged: ((androidx.compose.foundation.lazy.LazyListState?) -> Unit)? = null
+    onListStateChanged: ((androidx.compose.foundation.lazy.LazyListState?) -> Unit)? = null,
+    onItemClicked: ((Int) -> Unit)? = null
 ) {
     val itemHeight = pillItemHeight(listLineHeight, listVerticalPadding)
     ListDialogScreen(
@@ -79,14 +82,17 @@ fun CreditsOverlay(
             scrollTarget = scrollTarget,
             itemHeight = itemHeight,
             onListStateChanged = onListStateChanged
-        ) { _, entry, isSelected ->
+        ) { index, entry, isSelected ->
             PillRowKeyValue(
                 label = entry.name,
                 value = entry.detail,
                 isSelected = isSelected,
                 fontSize = listFontSize,
                 lineHeight = listLineHeight,
-                verticalPadding = listVerticalPadding
+                verticalPadding = listVerticalPadding,
+                modifier = Modifier.clickable {
+                    if (!isSelected) onItemClicked?.invoke(index)
+                }
             )
         }
     }

@@ -2,6 +2,7 @@ package dev.cannoli.scorza.ui.screens
 
 import android.graphics.BitmapFactory
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -208,6 +209,7 @@ fun GameListScreen(
                                 .fillMaxHeight()
                                 .then(if (showArt) Modifier.fillMaxWidth(1f - artWidth / 100f) else Modifier.fillMaxWidth())
                         ) {
+                            val registry = LocalScreenInputRegistry.current
                             List(
                                 items = state.items,
                                 selectedIndex = state.selectedIndex,
@@ -227,7 +229,8 @@ fun GameListScreen(
                                 val displayName = item.rowDisplayName(showStar = false)
                                 val withStar = if (starred) "$STAR $displayName" else displayName
                                 val label = if (item is ListItem.SubfolderItem) "/ $withStar" else withStar
-                                PillRowText(
+                                val registry = LocalScreenInputRegistry.current
+                            PillRowText(
                                     label = label,
                                     isSelected = isSelected,
                                     fontSize = listFontSize,
@@ -237,7 +240,6 @@ fun GameListScreen(
                                     checkState = if (state.multiSelectMode && item.isLeafSelectable) index in state.checkedIndices else null,
                                     tagSuffix = tagSuffix,
                                     modifier = Modifier.clickable {
-                                        val registry = LocalScreenInputRegistry.current
                                         if (!isSelected) viewModel.setSelectedIndex(index) else registry.top.onConfirm()
                                     }
                                 )

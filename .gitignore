@@ -22,3 +22,7 @@ app/src/main/assets/autoconfig/
 
 # Built by CI from the CannoliHQ/kitchen repo. Not tracked in git.
 app/src/main/assets/kitchen/
+
+# Ignore log files and log directories.
+*.log
+logs/

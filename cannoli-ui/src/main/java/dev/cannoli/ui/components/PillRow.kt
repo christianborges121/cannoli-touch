@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.clickable
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -114,7 +115,8 @@ fun PillRowText(
     showReorderIcon: Boolean = false,
     checkState: Boolean? = null,
     tagSuffix: String? = null,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onClick: (() -> Unit)? = null,
 ) {
     val colors = LocalCannoliColors.current
     val baseStyle = MaterialTheme.typography.bodyLarge
@@ -126,7 +128,12 @@ fun PillRowText(
     val scrollState = rememberScrollState()
     MarqueeEffect(scrollState, isSelected, key = label to isSelected)
 
-    PillRow(isSelected = isSelected, verticalPadding = verticalPadding, lineHeight = lineHeight, modifier = modifier) {
+    PillRow(
+        isSelected = isSelected,
+        verticalPadding = verticalPadding,
+        lineHeight = lineHeight,
+        modifier = modifier.then(if (onClick != null) Modifier.clickable { onClick() } else Modifier)
+    ) {
         BoxWithConstraints {
             val viewportMax = this.maxWidth
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -183,7 +190,9 @@ fun PillRowKeyValue(
     fontSize: TextUnit,
     lineHeight: TextUnit,
     verticalPadding: Dp,
-    swatchColor: Color? = null
+    swatchColor: Color? = null,
+    modifier: Modifier = Modifier,
+    onClick: (() -> Unit)? = null,
 ) {
     val colors = LocalCannoliColors.current
     val baseStyle = MaterialTheme.typography.bodyLarge
@@ -202,7 +211,14 @@ fun PillRowKeyValue(
     val valueColor = if (isSelected) colors.highlightText.copy(alpha = 0.5f) else colors.text.copy(alpha = 0.6f)
     val borderColor = if (isSelected) colors.highlightText.copy(alpha = 0.3f) else Color.White.copy(alpha = 0.3f)
 
-    PillRow(isSelected = isSelected, verticalPadding = verticalPadding, lineHeight = lineHeight, modifier = Modifier.fillMaxWidth()) {
+    PillRow(
+        isSelected = isSelected,
+        verticalPadding = verticalPadding,
+        lineHeight = lineHeight,
+        modifier = modifier
+            .fillMaxWidth()
+            .then(if (onClick != null) Modifier.clickable { onClick() } else Modifier)
+    ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically

@@ -118,6 +118,7 @@ fun LibretroScreen(
     guideInitialScrollX: Int = 0,
     onGuideScrollChanged: (y: Int, x: Int) -> Unit = { _, _ -> },
     infoScrollDir: Int = 0,
+    onSelectedIndexClicked: ((Int) -> Unit)? = null,
     gameInfo: GameInfo = GameInfo("", "", null),
     activeMapping: dev.cannoli.scorza.input.DeviceMapping? = null,
     controllersViewModel: dev.cannoli.scorza.ui.viewmodel.ControllersViewModel? = null,
@@ -170,7 +171,8 @@ fun LibretroScreen(
                     selectLabel = stringResource(R.string.label_select),
                     fontSize = igmFontSize,
                     lineHeight = igmLineHeight,
-                    buttonStyle = labels
+                    buttonStyle = labels,
+                    onSelectedIndexClicked = onSelectedIndexClicked
                 )
                 if (screen.confirmDeleteSlot) {
                     Box(
@@ -268,7 +270,8 @@ fun LibretroScreen(
                     coreInfo = coreInfo,
                     description = description,
                     fontSize = igmFontSize,
-                    lineHeight = igmLineHeight
+                    lineHeight = igmLineHeight,
+                    onSelectedIndexClicked = onSelectedIndexClicked
                 )
             }
             is IGMScreen.Info -> {

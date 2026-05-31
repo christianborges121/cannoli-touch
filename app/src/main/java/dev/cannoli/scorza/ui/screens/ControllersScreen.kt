@@ -2,6 +2,7 @@ package dev.cannoli.scorza.ui.screens
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
@@ -89,6 +90,8 @@ fun ControllersScreen(
         screen.selectedIndex.coerceIn(0, (selectableIndices.size - 1).coerceAtLeast(0))
     ) ?: -1
 
+    val registry = LocalScreenInputRegistry.current
+    val nav = LocalNavigation.current
     ScreenBackground(backgroundImagePath = backgroundImagePath, backgroundTint = backgroundTint, backgroundAlpha = backgroundAlpha, backgroundColor = backgroundColor) {
         Box(
             modifier = modifier
@@ -106,8 +109,6 @@ fun ControllersScreen(
                     lineHeight = listLineHeight,
                 )
                 Spacer(modifier = Modifier.height(Spacing.Sm))
-                val registry = LocalScreenInputRegistry.current
-                val nav = LocalNavigation.current
                 List(
                     items = entries,
                     selectedIndex = highlightedEntryIndex,

@@ -35,6 +35,7 @@ import dagger.hilt.android.AndroidEntryPoint
 import dev.cannoli.igm.AchievementInfo
 import dev.cannoli.igm.GuideType
 import dev.cannoli.igm.IGMScreen
+import dev.cannoli.igm.withSelectedIndex
 import dev.cannoli.igm.IGMSettings
 import dev.cannoli.igm.IGMSettingsItem
 import dev.cannoli.igm.InGameMenuOptions
@@ -492,6 +493,7 @@ class LibretroActivity : ComponentActivity() {
                                 guideInitialScrollX = guideInitialScrollX,
                                 onGuideScrollChanged = { y, x -> guideScrollPos = y; guideScrollXPos = x },
                                 infoScrollDir = infoScrollDir,
+                                onSelectedIndexClicked = { idx -> currentScreen?.let { replaceTop(it.withSelectedIndex(idx)) } },
                                 gameInfo = GameInfo(
                                     coreName = coreInfoText,
                                     romPath = romPath,

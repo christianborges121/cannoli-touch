@@ -4,6 +4,7 @@ import android.graphics.Bitmap
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -74,7 +75,8 @@ fun InGameMenu(
     selectLabel: String,
     fontSize: TextUnit = 22.sp,
     lineHeight: TextUnit = 32.sp,
-    buttonStyle: ButtonStyle = ButtonStyle()
+    buttonStyle: ButtonStyle = ButtonStyle(),
+    onSelectedIndexClicked: ((Int) -> Unit)? = null
 ) {
     val itemHeight = pillItemHeight(lineHeight, verticalPadding)
     val showThumbnail = selectedIndex == menuOptions.saveStateIndex || selectedIndex == menuOptions.loadStateIndex
@@ -115,7 +117,10 @@ fun InGameMenu(
                                     isSelected = isSelected,
                                     fontSize = fontSize,
                                     lineHeight = lineHeight,
-                                    verticalPadding = verticalPadding
+                                    verticalPadding = verticalPadding,
+                                    modifier = Modifier.clickable {
+                                        if (!isSelected) onSelectedIndexClicked?.invoke(index)
+                                    }
                                 )
                             } else {
                                 PillRowText(
@@ -123,7 +128,10 @@ fun InGameMenu(
                                     isSelected = isSelected,
                                     fontSize = fontSize,
                                     lineHeight = lineHeight,
-                                    verticalPadding = verticalPadding
+                                    verticalPadding = verticalPadding,
+                                    modifier = Modifier.clickable {
+                                        if (!isSelected) onSelectedIndexClicked?.invoke(index)
+                                    }
                                 )
                             }
                         }

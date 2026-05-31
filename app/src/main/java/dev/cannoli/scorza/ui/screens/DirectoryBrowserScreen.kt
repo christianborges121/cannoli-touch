@@ -1,6 +1,8 @@
 package dev.cannoli.scorza.ui.screens
 
+import androidx.compose.foundation.clickable
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
@@ -79,7 +81,7 @@ fun DirectoryBrowserScreen(
                             if (onItemClicked != null) onItemClicked(idx) else {
                                 // fallback: try to replace top if possible
                                 try {
-                                    nav.replaceTop(LauncherScreen.DirectoryBrowser(BrowsePurpose.FILES, currentPath = currentPath, entries = entries, selectedIndex = idx, scrollTarget = scrollTarget))
+                                    nav.replaceTop(LauncherScreen.DirectoryBrowser(BrowsePurpose.ROM_DIRECTORY, currentPath = currentPath, entries = entries, selectedIndex = idx, scrollTarget = scrollTarget))
                                 } catch (_: Exception) {
                                     // ignore if we can't reconstruct
                                 }

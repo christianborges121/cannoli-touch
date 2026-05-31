@@ -14,6 +14,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
+import dev.cannoli.scorza.navigation.LocalNavigation
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import dev.cannoli.scorza.R
@@ -116,13 +117,16 @@ fun DialogOverlay(
                     items = dialogState.options,
                     selectedIndex = dialogState.selectedOption,
                     itemHeight = itemHeight
-                ) { _, option, isSelected ->
+                ) { index, option, isSelected ->
                     PillRowText(
                         label = option,
                         isSelected = isSelected,
                         fontSize = listFontSize,
                         lineHeight = listLineHeight,
-                        verticalPadding = listVerticalPadding
+                        verticalPadding = listVerticalPadding,
+                        modifier = Modifier.clickable {
+                            if (!isSelected) nav.dialogState.value = (dialogState as DialogState.BulkContextMenu).copy(selectedOption = index)
+                        }
                     )
                 }
             }

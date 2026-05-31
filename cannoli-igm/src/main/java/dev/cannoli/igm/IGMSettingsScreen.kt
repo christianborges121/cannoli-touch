@@ -1,5 +1,6 @@
 package dev.cannoli.igm
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -41,7 +42,8 @@ fun IGMSettingsScreen(
     coreInfo: String = "",
     description: String? = null,
     fontSize: TextUnit = 22.sp,
-    lineHeight: TextUnit = 32.sp
+    lineHeight: TextUnit = 32.sp,
+    onSelectedIndexClicked: ((Int) -> Unit)? = null
 ) {
     val typo = LocalCannoliTypography.current
     val itemHeight = pillItemHeight(lineHeight, verticalPadding)
@@ -89,7 +91,7 @@ fun IGMSettingsScreen(
                         items = items,
                         selectedIndex = selectedIndex,
                         itemHeight = itemHeight
-                    ) { _, item, isSelected ->
+                    ) { index, item, isSelected ->
                         if (item.value != null) {
                             PillRowKeyValue(
                                 label = item.label,
@@ -97,7 +99,10 @@ fun IGMSettingsScreen(
                                 isSelected = isSelected,
                                 fontSize = fontSize,
                                 lineHeight = lineHeight,
-                                verticalPadding = verticalPadding
+                                verticalPadding = verticalPadding,
+                                modifier = Modifier.clickable {
+                                    if (!isSelected) onSelectedIndexClicked?.invoke(index)
+                                }
                             )
                         } else {
                             PillRowText(
@@ -105,7 +110,10 @@ fun IGMSettingsScreen(
                                 isSelected = isSelected,
                                 fontSize = fontSize,
                                 lineHeight = lineHeight,
-                                verticalPadding = verticalPadding
+                                verticalPadding = verticalPadding,
+                                modifier = Modifier.clickable {
+                                    if (!isSelected) onSelectedIndexClicked?.invoke(index)
+                                }
                             )
                         }
                     }

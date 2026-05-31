@@ -1,5 +1,6 @@
 package dev.cannoli.scorza.ui.screens
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -72,6 +73,7 @@ fun SettingsScreen(
                     )
                     Spacer(modifier = Modifier.height(Spacing.Sm))
                 }
+                val registry = LocalScreenInputRegistry.current
                 List(
                     items = state.items,
                     selectedIndex = state.selectedIndex,
@@ -98,7 +100,6 @@ fun SettingsScreen(
                             lineHeight = listLineHeight,
                             verticalPadding = listVerticalPadding,
                             modifier = Modifier.clickable {
-                                val registry = LocalScreenInputRegistry.current
                                 if (!isSelected) viewModel.setSelectedIndex(state.items.indexOf(item)) else registry.top.onConfirm()
                             }
                         )
@@ -160,6 +161,7 @@ fun SettingsScreen(
                     lineHeight = listLineHeight,
                 )
                 Spacer(modifier = Modifier.height(Spacing.Sm))
+                val registry = LocalScreenInputRegistry.current
                 List(
                     items = state.categories,
                     selectedIndex = state.categoryIndex,
@@ -174,7 +176,6 @@ fun SettingsScreen(
                         lineHeight = listLineHeight,
                         verticalPadding = listVerticalPadding,
                         modifier = Modifier.clickable {
-                            val registry = LocalScreenInputRegistry.current
                             if (!isSelected) viewModel.setCategoryIndex(state.categories.indexOf(category)) else registry.top.onConfirm()
                         }
                     )

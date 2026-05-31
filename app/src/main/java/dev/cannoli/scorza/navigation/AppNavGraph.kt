@@ -1,6 +1,7 @@
 package dev.cannoli.scorza.navigation
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -355,6 +356,8 @@ fun AppNavGraph(
                 }
                 val selected = currentScreen.mappings.getOrNull(currentScreen.selectedIndex)
                 val canSelect = selected != null
+                val registry = dev.cannoli.scorza.input.screen.compose.LocalScreenInputRegistry.current
+                val nav = LocalNavigation.current
                 ListDialogScreen(
                     backgroundImagePath = appSettings.backgroundImagePath,
                     backgroundTint = appSettings.backgroundTint,
@@ -374,7 +377,7 @@ fun AppNavGraph(
                         itemHeight = itemHeight,
                         scrollTarget = currentScreen.scrollTarget,
                         onListStateChanged = onListStateChanged
-                    ) { _, entry, isSelected ->
+                    ) { index, entry, isSelected ->
                         val value = if (currentScreen.filter == 0 && entry.runnerLabel.isNotEmpty())
                             "${entry.coreDisplayName} (${entry.runnerLabel})"
                         else entry.coreDisplayName
@@ -384,7 +387,11 @@ fun AppNavGraph(
                             isSelected = isSelected,
                             fontSize = listFontSize,
                             lineHeight = listLineHeight,
-                            verticalPadding = listVerticalPadding
+                            verticalPadding = listVerticalPadding,
+                            modifier = Modifier.clickable {
+                                if (!isSelected) nav.replaceTop(currentScreen.withScroll(selectedIndex = index, scrollTarget = currentScreen.scrollTarget))
+                                else registry.top.onConfirm()
+                            }
                         )
                     }
                 }
@@ -430,7 +437,11 @@ fun AppNavGraph(
                                     isSelected = isSelected,
                                     fontSize = listFontSize,
                                     lineHeight = listLineHeight,
-                                    verticalPadding = listVerticalPadding
+                                    verticalPadding = listVerticalPadding,
+                                    modifier = Modifier.clickable {
+                                        if (!isSelected) nav.replaceTop(currentScreen.withScroll(selectedIndex = index, scrollTarget = currentScreen.scrollTarget))
+                                        else registry.top.onConfirm()
+                                    }
                                 )
                             } else {
                                 PillRowText(
@@ -454,6 +465,8 @@ fun AppNavGraph(
                     val handler = remember { inputRouter.currentHandler() }
                     dev.cannoli.scorza.input.screen.compose.ScreenInput(handler)
                 }
+                val registry = dev.cannoli.scorza.input.screen.compose.LocalScreenInputRegistry.current
+                val nav = LocalNavigation.current
                 ListDialogScreen(
                     backgroundImagePath = appSettings.backgroundImagePath,
                     backgroundTint = appSettings.backgroundTint,
@@ -470,7 +483,7 @@ fun AppNavGraph(
                         itemHeight = itemHeight,
                         scrollTarget = currentScreen.scrollTarget,
                         onListStateChanged = onListStateChanged
-                    ) { _, entry, isSelected ->
+                    ) { index, entry, isSelected ->
                         PillRowKeyValue(
                             label = stringResource(entry.labelRes),
                             value = entry.hex.uppercase(),
@@ -478,7 +491,11 @@ fun AppNavGraph(
                             fontSize = listFontSize,
                             lineHeight = listLineHeight,
                             verticalPadding = listVerticalPadding,
-                            swatchColor = Color(entry.color.toInt())
+                            swatchColor = Color(entry.color.toInt()),
+                            modifier = Modifier.clickable {
+                                if (!isSelected) nav.replaceTop(currentScreen.withScroll(selectedIndex = index, scrollTarget = currentScreen.scrollTarget))
+                                else registry.top.onConfirm()
+                            }
                         )
                     }
                 }
@@ -651,6 +668,8 @@ fun AppNavGraph(
                     val handler = remember { inputRouter.currentHandler() }
                     dev.cannoli.scorza.input.screen.compose.ScreenInput(handler)
                 }
+                val registry = dev.cannoli.scorza.input.screen.compose.LocalScreenInputRegistry.current
+                val nav = LocalNavigation.current
                 ListDialogScreen(
                     backgroundImagePath = appSettings.backgroundImagePath,
                     backgroundTint = appSettings.backgroundTint,
@@ -669,7 +688,7 @@ fun AppNavGraph(
                         itemHeight = itemHeight,
                         scrollTarget = currentScreen.scrollTarget,
                         onListStateChanged = onListStateChanged
-                    ) { _, action, isSelected ->
+                    ) { index, action, isSelected ->
                         val chord = currentScreen.shortcuts[action]
                         val value = if (chord.isNullOrEmpty()) stringResource(R.string.value_none)
                         else chord.joinToString(" + ") { keyCodeName(it) }
@@ -679,7 +698,11 @@ fun AppNavGraph(
                             isSelected = isSelected,
                             fontSize = listFontSize,
                             lineHeight = listLineHeight,
-                            verticalPadding = listVerticalPadding
+                            verticalPadding = listVerticalPadding,
+                            modifier = Modifier.clickable {
+                                if (!isSelected) nav.replaceTop(currentScreen.withScroll(selectedIndex = index, scrollTarget = currentScreen.scrollTarget))
+                                else registry.top.onConfirm()
+                            }
                         )
                     }
                 }
@@ -777,7 +800,7 @@ fun AppNavGraph(
                                 lineHeight = listLineHeight,
                                 verticalPadding = listVerticalPadding,
                                 modifier = Modifier.clickable {
-                                    if (!isSelected) nav.replaceTop(currentScreen.withScroll(selectedIndex = idx, scrollTarget = currentScreen.scrollTarget))
+                                    if (!isSelected) nav?.replaceTop(currentScreen.withScroll(selectedIndex = idx, scrollTarget = currentScreen.scrollTarget))
                                     else registry.top.onConfirm()
                                 }
                             )
@@ -801,7 +824,7 @@ fun AppNavGraph(
                     isSelectRow = currentScreen.selectedIndex == 0,
                     showSelectOption = currentScreen.currentPath != "/storage/",
                     onListStateChanged = onListStateChanged,
-                    onItemClicked = { idx -> nav.replaceTop(currentScreen.withScroll(selectedIndex = idx, scrollTarget = currentScreen.scrollTarget)) },
+                    onItemClicked = { idx -> nav?.replaceTop(currentScreen.withScroll(selectedIndex = idx, scrollTarget = currentScreen.scrollTarget)) },
                     buttonStyle = labels
                 )
                 if (dialog.isFullScreen) {
@@ -829,7 +852,8 @@ fun AppNavGraph(
                     listFontSize = listFontSize,
                     listLineHeight = listLineHeight,
                     listVerticalPadding = listVerticalPadding,
-                    onListStateChanged = onListStateChanged
+                    onListStateChanged = onListStateChanged,
+                    onItemClicked = { idx -> nav?.replaceTop(currentScreen.withScroll(selectedIndex = idx, scrollTarget = currentScreen.scrollTarget)) }
                 )
             }
             is LauncherScreen.Controllers -> {
@@ -890,7 +914,7 @@ fun AppNavGraph(
                                 if (finalized != null || !editButtonsController.isListening) {
                                     val cs = nav.currentScreen
                                     if (cs is LauncherScreen.EditButtons) {
-                                        nav.replaceTop(cs.copy(listeningCanonical = null, countdownMs = 0))
+                                        nav?.replaceTop(cs.copy(listeningCanonical = null, countdownMs = 0))
                                     }
                                     break
                                 }
@@ -898,7 +922,7 @@ fun AppNavGraph(
                                 if (cs is LauncherScreen.EditButtons && cs.listeningCanonical != null) {
                                     val elapsed = (System.currentTimeMillis() - startedAt).toInt()
                                     if (cs.countdownMs != elapsed) {
-                                        nav.replaceTop(cs.copy(countdownMs = elapsed))
+                                        nav?.replaceTop(cs.copy(countdownMs = elapsed))
                                     }
                                 }
                             }

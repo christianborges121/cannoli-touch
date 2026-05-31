@@ -111,6 +111,8 @@ fun BottomBar(
 }
 
 // Backwards-compatible overload for callers that supply Pair<String,String>
+@Composable
+@JvmName("BottomBarPairs")
 fun BottomBar(
     modifier: Modifier = Modifier,
     leftItems: List<Pair<String, String>>,

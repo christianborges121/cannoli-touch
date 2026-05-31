@@ -1,5 +1,6 @@
 package dev.cannoli.scorza.ui.screens
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -147,6 +148,10 @@ fun ControllerDetailScreen(
                     selectedIndex = screen.selectedIndex.coerceIn(0, entries.size - 1),
                     itemHeight = itemHeight,
                 ) { idx, entry, isSelected ->
+                    val onClick = {
+                        if (!isSelected) nav.replaceTop(screen.withScroll(selectedIndex = idx, scrollTarget = screen.scrollTarget))
+                        else registry.top.onConfirm()
+                    }
                     when (entry) {
                         is ControllerDetailEntry.KeyValue -> PillRowKeyValue(
                             label = entry.label,
@@ -155,10 +160,7 @@ fun ControllerDetailScreen(
                             fontSize = listFontSize,
                             lineHeight = listLineHeight,
                             verticalPadding = listVerticalPadding,
-                            modifier = Modifier.clickable {
-                                if (!isSelected) nav.replaceTop(screen.withScroll(selectedIndex = idx, scrollTarget = screen.scrollTarget))
-                                else registry.top.onConfirm()
-                            },
+                            onClick = onClick,
                         )
                         is ControllerDetailEntry.Editable -> PillRowKeyValue(
                             label = entry.label,
@@ -167,6 +169,7 @@ fun ControllerDetailScreen(
                             fontSize = listFontSize,
                             lineHeight = listLineHeight,
                             verticalPadding = listVerticalPadding,
+                            onClick = onClick,
                         )
                         is ControllerDetailEntry.Chevron -> PillRowKeyValue(
                             label = entry.label,
@@ -175,6 +178,7 @@ fun ControllerDetailScreen(
                             fontSize = listFontSize,
                             lineHeight = listLineHeight,
                             verticalPadding = listVerticalPadding,
+                            onClick = onClick,
                         )
                         is ControllerDetailEntry.Destructive -> DestructiveRow(
                             label = entry.label,
@@ -182,6 +186,7 @@ fun ControllerDetailScreen(
                             fontSize = listFontSize,
                             lineHeight = listLineHeight,
                             verticalPadding = listVerticalPadding,
+                            onClick = onClick,
                         )
                     }
                 }
@@ -215,12 +220,18 @@ private fun DestructiveRow(
     fontSize: TextUnit,
     lineHeight: TextUnit,
     verticalPadding: Dp,
+    onClick: (() -> Unit)? = null,
 ) {
     val baseStyle = MaterialTheme.typography.bodyLarge.copy(
         fontSize = fontSize,
         lineHeight = lineHeight,
     )
-    PillRow(isSelected = isSelected, verticalPadding = verticalPadding, lineHeight = lineHeight) {
+    PillRow(
+        isSelected = isSelected,
+        verticalPadding = verticalPadding,
+        lineHeight = lineHeight,
+        modifier = Modifier.then(if (onClick != null) Modifier.clickable { onClick() } else Modifier)
+    ) {
         Text(
             text = label,
             style = baseStyle,

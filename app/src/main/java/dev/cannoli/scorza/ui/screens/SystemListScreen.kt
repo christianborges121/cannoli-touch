@@ -26,7 +26,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.foundation.clickable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.FilterQuality
 import androidx.compose.ui.graphics.ImageBitmap
@@ -276,30 +275,30 @@ fun SystemListScreen(
                 if (state.items.isEmpty()) {
                     emptyList()
                 } else {
-                    buildList {
+                    buildList<Triple<String, String, (() -> Unit)?>> {
                         if (hasResumeState && swapPlayResume) {
-                            add(Triple(buttonStyle.north, playLabel, null))
-                            add(Triple(buttonStyle.confirm, resumeLabel, { onConfirm?.invoke() }))
+                            add(Triple(buttonStyle.north, playLabel, null as (() -> Unit)?))
+                            add(Triple(buttonStyle.confirm, resumeLabel, { onConfirm?.invoke(); Unit }))
                         } else {
-                            if (hasResumeState) add(buttonStyle.north to resumeLabel)
-                            add(Triple(buttonStyle.north, resumeLabel, { onConfirm?.invoke() }))
-                            add(Triple(buttonStyle.confirm, playLabel, { onConfirm?.invoke() }))
+                            if (hasResumeState) add(Triple(buttonStyle.north, resumeLabel, null as (() -> Unit)?))
+                            add(Triple(buttonStyle.north, resumeLabel, { onConfirm?.invoke(); Unit }))
+                            add(Triple(buttonStyle.confirm, playLabel, { onConfirm?.invoke(); Unit }))
                         }
                     }
                 }
             } else if (state.items.isEmpty()) {
-                listOf(Triple(buttonStyle.west, stringResource(R.string.label_kitchen), { onKitchen?.invoke() }))
+                listOf(Triple(buttonStyle.west, stringResource(R.string.label_kitchen), { onKitchen?.invoke(); Unit }))
             } else if (kitchenRunning) {
-                listOf(Triple(buttonStyle.west, stringResource(R.string.label_kitchen), { onKitchen?.invoke() }), Triple(buttonStyle.confirm, stringResource(R.string.label_select), { onConfirm?.invoke() }))
+                listOf(Triple(buttonStyle.west, stringResource(R.string.label_kitchen), { onKitchen?.invoke(); Unit }), Triple(buttonStyle.confirm, stringResource(R.string.label_select), { onConfirm?.invoke(); Unit }))
             } else {
-                listOf(Triple(buttonStyle.confirm, stringResource(R.string.label_select), { onConfirm?.invoke() }))
+                listOf(Triple(buttonStyle.confirm, stringResource(R.string.label_select), { onConfirm?.invoke(); Unit }))
             }
-            val leftItems = buildList {
-                if (mainMenuQuit) add(buttonStyle.back to stringResource(R.string.label_quit))
+            val leftItems = buildList<Triple<String, String, (() -> Unit)?>> {
+                if (mainMenuQuit) add(Triple(buttonStyle.back, stringResource(R.string.label_quit), null as (() -> Unit)?))
                 if (fiveGameHandheld) {
-                    add(Triple(buttonStyle.west, stringResource(R.string.label_settings), { onSettings?.invoke() }))
+                    add(Triple(buttonStyle.west, stringResource(R.string.label_settings), { onSettings?.invoke(); Unit }))
                 } else {
-                    add(Triple(buttonStyle.north, stringResource(R.string.label_settings), { onSettings?.invoke() }))
+                    add(Triple(buttonStyle.north, stringResource(R.string.label_settings), { onSettings?.invoke(); Unit }))
                 }
             }
             BottomBar(

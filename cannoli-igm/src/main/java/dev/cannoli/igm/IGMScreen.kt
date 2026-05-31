@@ -34,3 +34,22 @@ sealed class IGMScreen {
         val swapWithIndex: Int = -1,
     ) : IGMScreen()
 }
+
+fun IGMScreen.withSelectedIndex(selectedIndex: Int): IGMScreen = when (this) {
+    is IGMScreen.Menu -> copy(selectedIndex = selectedIndex)
+    is IGMScreen.Settings -> copy(selectedIndex = selectedIndex)
+    is IGMScreen.Video -> copy(selectedIndex = selectedIndex)
+    is IGMScreen.Advanced -> copy(selectedIndex = selectedIndex)
+    is IGMScreen.Emulator -> copy(selectedIndex = selectedIndex)
+    is IGMScreen.EmulatorCategory -> copy(selectedIndex = selectedIndex)
+    is IGMScreen.Shortcuts -> copy(selectedIndex = selectedIndex)
+    is IGMScreen.ShaderSettings -> copy(selectedIndex = selectedIndex)
+    is IGMScreen.SavePrompt -> copy(selectedIndex = selectedIndex)
+    is IGMScreen.Info -> copy(selectedIndex = selectedIndex)
+    is IGMScreen.Achievements -> copy(selectedIndex = selectedIndex)
+    is IGMScreen.AchievementDetail -> copy(selectedIndex = selectedIndex)
+    is IGMScreen.GuidePicker -> copy(selectedIndex = selectedIndex)
+    is IGMScreen.Guide -> copy(selectedIndex = selectedIndex)
+    is IGMScreen.Buttons -> copy(selectedIndex = selectedIndex)
+    is IGMScreen.ReassignPlayers -> copy(selectedIndex = selectedIndex)
+}

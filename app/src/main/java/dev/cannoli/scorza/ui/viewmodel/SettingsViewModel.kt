@@ -306,6 +306,15 @@ class SettingsViewModel @Inject constructor(
         _state.update { it.copy(categoryIndex = index) }
     }
 
+    fun setSelectedIndex(index: Int) {
+        _state.update { current ->
+            if (current.inSubList) {
+                val safeIndex = index.coerceIn(0, (current.items.size - 1).coerceAtLeast(0))
+                current.copy(selectedIndex = safeIndex)
+            } else current
+        }
+    }
+
     fun enterCategory(): Boolean {
         val current = _state.value
         if (current.inSubList) return false
